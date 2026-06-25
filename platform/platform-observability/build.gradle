@@ -1,0 +1,15 @@
+// platform-observability: Micrometer, OpenTelemetry, tracing config shared across all services
+dependencies {
+    implementation project(':platform:platform-core')
+    implementation libs.spring.boot.actuator
+    implementation libs.bundles.observability
+    implementation libs.opentelemetry.api
+    implementation libs.lombok
+
+    // Servlet and WebFlux APIs — compileOnly so filters compile without forcing
+    // either stack at runtime. Each service brings its own web dependency.
+    compileOnly libs.spring.boot.web
+    compileOnly libs.spring.boot.webflux
+
+    testImplementation libs.bundles.testing
+}

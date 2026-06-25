@@ -1,0 +1,72 @@
+{
+  "type": "record",
+  "name": "EntitlementEvent",
+  "namespace": "com.modus.license.events.entitlement",
+  "doc": "What a tenant is entitled to use. Topic: modus.entitlement.events. Key: entitlementId.",
+  "fields": [
+    {
+      "name": "metadata",
+      "type": "com.modus.license.events.common.EventMetadata"
+    },
+    {
+      "name": "entitlementId",
+      "type": "string",
+      "doc": "UUID of the entitlement record."
+    },
+    {
+      "name": "tenantId",
+      "type": "string"
+    },
+    {
+      "name": "subscriptionId",
+      "type": "string",
+      "doc": "The subscription that originated this entitlement."
+    },
+    {
+      "name": "planId",
+      "type": "string"
+    },
+    {
+      "name": "planTier",
+      "type": "string"
+    },
+    {
+      "name": "licenseType",
+      "type": "string"
+    },
+    {
+      "name": "seatLimit",
+      "type": ["null", "int"],
+      "default": null
+    },
+    {
+      "name": "featureKeys",
+      "type": {"type": "array", "items": "string"},
+      "default": [],
+      "doc": "List of feature keys this entitlement grants access to."
+    },
+    {
+      "name": "status",
+      "type": "string",
+      "doc": "EntitlementStatus: ACTIVE | EXPIRED | SUSPENDED | REVOKED | PENDING."
+    },
+    {
+      "name": "previousStatus",
+      "type": ["null", "string"],
+      "default": null
+    },
+    {
+      "name": "startDate",
+      "type": {"type": "long", "logicalType": "timestamp-millis"}
+    },
+    {
+      "name": "endDate",
+      "type": ["null", {"type": "long", "logicalType": "timestamp-millis"}],
+      "default": null
+    },
+    {
+      "name": "effectiveAt",
+      "type": {"type": "long", "logicalType": "timestamp-millis"}
+    }
+  ]
+}

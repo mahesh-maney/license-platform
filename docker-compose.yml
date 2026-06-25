@@ -1,0 +1,812 @@
+version: '3.9'
+
+# ============================================================
+# MODUS LICENSE PLATFORM — Local Development Stack
+# Starts all infrastructure dependencies.
+# Services themselves run via: ./gradlew :services:<name>:bootRun
+# ============================================================
+
+name: modus-license
+
+networks:
+  modus-net:
+    driver: bridge
+
+volumes:
+  postgres-tenant-data:
+  postgres-subscription-data:
+  postgres-entitlement-data:
+  postgres-feature-data:
+  postgres-named-license-data:
+  postgres-user-data:
+  postgres-audit-data:
+  postgres-reporting-data:
+  postgres-notification-data:
+  redis-data:
+  kafka-data:
+  zookeeper-data:
+  zookeeper-log:
+  keycloak-data:
+  temporal-data:
+
+services:
+
+  # ----------------------------------------------------------
+  # PostgreSQL — one instance per service (database-per-service)
+  # In prod: Azure Database for PostgreSQL Flexible Server
+  # ----------------------------------------------------------
+  postgres-tenant:
+    image: postgres:16-alpine
+    container_name: modus-postgres-tenant
+    environment:
+      POSTGRES_DB:       ${TENANT_DB_NAME:-modus_tenant}
+      POSTGRES_USER:     ${TENANT_DB_USERNAME:-modus_tenant_user}
+      POSTGRES_PASSWORD: ${TENANT_DB_PASSWORD:-changeme}
+    ports:
+      - "${TENANT_DB_PORT:-5432}:5432"
+    volumes:
+      - postgres-tenant-data:/var/lib/postgresql/data
+    networks: [modus-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${TENANT_DB_USERNAME:-modus_tenant_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-subscription:
+    image: postgres:16-alpine
+    container_name: modus-postgres-subscription
+    environment:
+      POSTGRES_DB:       ${SUBSCRIPTION_DB_NAME:-modus_subscription}
+      POSTGRES_USER:     ${SUBSCRIPTION_DB_USERNAME:-modus_sub_user}
+      POSTGRES_PASSWORD: ${SUBSCRIPTION_DB_PASSWORD:-changeme}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-subscription-data:/var/lib/postgresql/data
+    networks: [modus-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${SUBSCRIPTION_DB_USERNAME:-modus_sub_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-entitlement:
+    image: postgres:16-alpine
+    container_name: modus-postgres-entitlement
+    environment:
+      POSTGRES_DB:       ${ENTITLEMENT_DB_NAME:-modus_entitlement}
+      POSTGRES_USER:     ${ENTITLEMENT_DB_USERNAME:-modus_ent_user}
+      POSTGRES_PASSWORD: ${ENTITLEMENT_DB_PASSWORD:-changeme}
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres-entitlement-data:/var/lib/postgresql/data
+    networks: [modus-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${ENTITLEMENT_DB_USERNAME:-modus_ent_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-feature:
+    image: postgres:16-alpine
+    container_name: modus-postgres-feature
+    environment:
+      POSTGRES_DB:       ${FEATURE_DB_NAME:-modus_feature}
+      POSTGRES_USER:     ${FEATURE_DB_USERNAME:-modus_feat_user}
+      POSTGRES_PASSWORD: ${FEATURE_DB_PASSWORD:-changeme}
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres-feature-data:/var/lib/postgresql/data
+    networks: [modus-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${FEATURE_DB_USERNAME:-modus_feat_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-named-license:
+    image: postgres:16-alpine
+    container_name: modus-postgres-named-license
+    environment:
+      POSTGRES_DB:       ${NAMED_LICENSE_DB_NAME:-modus_named_license}
+      POSTGRES_USER:     ${NAMED_LICENSE_DB_USERNAME:-modus_nl_user}
+      POSTGRES_PASSWORD: ${NAMED_LICENSE_DB_PASSWORD:-changeme}
+    ports:
+      - "5436:5432"
+    volumes:
+      - postgres-named-license-data:/var/lib/postgresql/data
+    networks: [modus-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${NAMED_LICENSE_DB_USERNAME:-modus_nl_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-user:
+    image: postgres:16-alpine
+    container_name: modus-postgres-user
+    environment:
+      POSTGRES_DB:       ${USER_DB_NAME:-modus_user}
+      POSTGRES_USER:     ${USER_DB_USERNAME:-modus_user_svc}
+      POSTGRES_PASSWORD: ${USER_DB_PASSWORD:-changeme}
+    ports:
+      - "5437:5432"
+    volumes:
+      - postgres-user-data:/var/lib/postgresql/data
+    networks: [modus-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${USER_DB_USERNAME:-modus_user_svc}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-audit:
+    image: postgres:16-alpine
+    container_name: modus-postgres-audit
+    environment:
+      POSTGRES_DB:       ${AUDIT_DB_NAME:-modus_audit}
+      POSTGRES_USER:     ${AUDIT_DB_USERNAME:-modus_audit_user}
+      POSTGRES_PASSWORD: ${AUDIT_DB_PASSWORD:-changeme}
+    ports:
+      - "5438:5432"
+    volumes:
+      - postgres-audit-data:/var/lib/postgresql/data
+    networks: [modus-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${AUDIT_DB_USERNAME:-modus_audit_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-reporting:
+    image: postgres:16-alpine
+    container_name: modus-postgres-reporting
+    environment:
+      POSTGRES_DB:       ${REPORTING_DB_NAME:-modus_reporting}
+      POSTGRES_USER:     ${REPORTING_DB_USERNAME:-modus_report_user}
+      POSTGRES_PASSWORD: ${REPORTING_DB_PASSWORD:-changeme}
+    ports:
+      - "5439:5432"
+    volumes:
+      - postgres-reporting-data:/var/lib/postgresql/data
+    networks: [modus-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${REPORTING_DB_USERNAME:-modus_report_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-notification:
+    image: postgres:16-alpine
+    container_name: modus-postgres-notification
+    environment:
+      POSTGRES_DB:       ${NOTIFICATION_DB_NAME:-modus_notification}
+      POSTGRES_USER:     ${NOTIFICATION_DB_USERNAME:-modus_notif_user}
+      POSTGRES_PASSWORD: ${NOTIFICATION_DB_PASSWORD:-changeme}
+    ports:
+      - "5440:5432"
+    volumes:
+      - postgres-notification-data:/var/lib/postgresql/data
+    networks: [modus-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${NOTIFICATION_DB_USERNAME:-modus_notif_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ----------------------------------------------------------
+  # Redis — Azure Cache for Redis in prod
+  # ----------------------------------------------------------
+  redis:
+    image: redis:7.2-alpine
+    container_name: modus-redis
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD:-changeme}
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --save 60 1
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    networks: [modus-net]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ----------------------------------------------------------
+  # Kafka + Zookeeper — Azure Event Hubs (Kafka protocol) in prod
+  # ----------------------------------------------------------
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.1
+    container_name: modus-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME:   2000
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-log:/var/lib/zookeeper/log
+    networks: [modus-net]
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: modus-kafka
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER_ID:                        1
+      KAFKA_ZOOKEEPER_CONNECT:                zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS:             PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP:   PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME:       PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE:        false
+      KAFKA_LOG_RETENTION_HOURS:              168
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    ports:
+      - "9092:9092"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks: [modus-net]
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:29092", "--list"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.6.1
+    container_name: modus-schema-registry
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME:                    schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:29092
+      SCHEMA_REGISTRY_LISTENERS:                    http://0.0.0.0:8081
+    ports:
+      - "${KAFKA_SCHEMA_REGISTRY_PORT:-8081}:8081"
+    networks: [modus-net]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8081/subjects || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  kafka-init:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: modus-kafka-init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks: [modus-net]
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+      "
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic ${KAFKA_TOPIC_TENANT_EVENTS:-modus.tenant.events}          --partitions ${KAFKA_TOPIC_PARTITIONS:-12} --replication-factor 1
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic ${KAFKA_TOPIC_SUBSCRIPTION_EVENTS:-modus.subscription.events} --partitions ${KAFKA_TOPIC_PARTITIONS:-12} --replication-factor 1
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic ${KAFKA_TOPIC_ENTITLEMENT_EVENTS:-modus.entitlement.events}   --partitions ${KAFKA_TOPIC_PARTITIONS:-12} --replication-factor 1
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic ${KAFKA_TOPIC_FEATURE_EVENTS:-modus.feature.events}           --partitions ${KAFKA_TOPIC_PARTITIONS:-12} --replication-factor 1
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic ${KAFKA_TOPIC_SESSION_EVENTS:-modus.session.events}           --partitions ${KAFKA_TOPIC_PARTITIONS:-12} --replication-factor 1
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic ${KAFKA_TOPIC_ENFORCEMENT_DECISIONS:-modus.enforcement.decisions} --partitions ${KAFKA_TOPIC_PARTITIONS:-12} --replication-factor 1
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic ${KAFKA_TOPIC_NAMED_LICENSE_EVENTS:-modus.named-license.events} --partitions ${KAFKA_TOPIC_PARTITIONS:-12} --replication-factor 1
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic ${KAFKA_TOPIC_USER_EVENTS:-modus.user.events}                 --partitions ${KAFKA_TOPIC_PARTITIONS:-12} --replication-factor 1
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic ${KAFKA_TOPIC_USAGE_EVENTS:-modus.usage.events}               --partitions ${KAFKA_TOPIC_PARTITIONS:-12} --replication-factor 1
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic ${KAFKA_TOPIC_AUDIT_EVENTS:-modus.audit.events}               --partitions ${KAFKA_TOPIC_PARTITIONS:-12} --replication-factor 1
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic ${KAFKA_TOPIC_NOTIFICATION_EVENTS:-modus.notification.events} --partitions ${KAFKA_TOPIC_PARTITIONS:-12} --replication-factor 1
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic ${KAFKA_TOPIC_BILLING_EVENTS:-modus.billing.events}           --partitions ${KAFKA_TOPIC_PARTITIONS:-12} --replication-factor 1
+      echo 'Kafka topics created.'
+      "
+
+  # ----------------------------------------------------------
+  # Keycloak — IAM (SSO/OIDC/SAML/MFA)
+  # In prod: replace with Azure AD / Entra ID external IdP
+  # ----------------------------------------------------------
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.4
+    container_name: modus-keycloak
+    command: start-dev --import-realm
+    environment:
+      KC_DB:                    postgres
+      KC_DB_URL:                jdbc:postgresql://postgres-tenant:5432/${TENANT_DB_NAME:-modus_tenant}
+      KC_DB_USERNAME:           ${TENANT_DB_USERNAME:-modus_tenant_user}
+      KC_DB_PASSWORD:           ${TENANT_DB_PASSWORD:-changeme}
+      KEYCLOAK_ADMIN:           admin
+      KEYCLOAK_ADMIN_PASSWORD:  ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_HOSTNAME_STRICT:       false
+      KC_HTTP_ENABLED:          true
+    ports:
+      - "8180:8080"
+    volumes:
+      - keycloak-data:/opt/keycloak/data
+      - ./infra/keycloak:/opt/keycloak/data/import
+    networks: [modus-net]
+    depends_on:
+      postgres-tenant:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health/ready || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+
+  # ----------------------------------------------------------
+  # Temporal — Workflow orchestration (Scheduler service)
+  # ----------------------------------------------------------
+  temporal:
+    image: temporalio/auto-setup:1.24.2
+    container_name: modus-temporal
+    environment:
+      DB:                     postgresql
+      DB_PORT:                5432
+      POSTGRES_USER:          ${TENANT_DB_USERNAME:-modus_tenant_user}
+      POSTGRES_PWD:           ${TENANT_DB_PASSWORD:-changeme}
+      POSTGRES_SEEDS:         postgres-tenant
+      DYNAMIC_CONFIG_FILE_PATH: config/dynamicconfig/development-sql.yaml
+    ports:
+      - "${TEMPORAL_PORT:-7233}:7233"
+    networks: [modus-net]
+    depends_on:
+      postgres-tenant:
+        condition: service_healthy
+
+  temporal-ui:
+    image: temporalio/ui:2.26.2
+    container_name: modus-temporal-ui
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+    ports:
+      - "9988:8080"
+    networks: [modus-net]
+    depends_on:
+      - temporal
+
+  # ----------------------------------------------------------
+  # Observability stack
+  # ----------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    container_name: modus-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=15d'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks: [modus-net]
+
+  grafana:
+    image: grafana/grafana:10.4.3
+    container_name: modus-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER:     admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP:     false
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning
+    networks: [modus-net]
+    depends_on:
+      - prometheus
+
+  zipkin:
+    image: openzipkin/zipkin:3.4
+    container_name: modus-zipkin
+    ports:
+      - "9411:9411"
+    networks: [modus-net]
+
+  # ----------------------------------------------------------
+  # Application services
+  # Images built via: ./gradlew jib
+  # Or locally: ./gradlew :services:<name>:bootRun
+  # ----------------------------------------------------------
+
+  tenant-management:
+    image: ${CONTAINER_REGISTRY:-modusacr.azurecr.io}/tenant-management:${APP_VERSION:-latest}
+    container_name: modus-tenant-management
+    depends_on:
+      postgres-tenant:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+      schema-registry:
+        condition: service_healthy
+    environment:
+      TENANT_DB_HOST:           postgres-tenant
+      TENANT_DB_PASSWORD:       ${TENANT_DB_PASSWORD:-changeme}
+      KAFKA_BOOTSTRAP_SERVERS:  kafka:29092
+      KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      IAM_ISSUER_URI:           http://keycloak:8080/realms/modus
+      IAM_JWK_SET_URI:          http://keycloak:8080/realms/modus/protocol/openid-connect/certs
+    ports:
+      - "${PORT_TENANT_MANAGEMENT:-8081}:8081"
+    networks: [modus-net]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8081/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  subscription-plan:
+    image: ${CONTAINER_REGISTRY:-modusacr.azurecr.io}/subscription-plan:${APP_VERSION:-latest}
+    container_name: modus-subscription-plan
+    depends_on:
+      postgres-subscription:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+      schema-registry:
+        condition: service_healthy
+    environment:
+      SUBSCRIPTION_DB_HOST:      postgres-subscription
+      SUBSCRIPTION_DB_PASSWORD:  ${SUBSCRIPTION_DB_PASSWORD:-changeme}
+      KAFKA_BOOTSTRAP_SERVERS:   kafka:29092
+      KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      IAM_ISSUER_URI:            http://keycloak:8080/realms/modus
+      IAM_JWK_SET_URI:           http://keycloak:8080/realms/modus/protocol/openid-connect/certs
+      SCHEDULER_WORKFLOW_HOST:   modus-scheduler-workflow
+    ports:
+      - "${PORT_SUBSCRIPTION_PLAN:-8082}:8082"
+    networks: [modus-net]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8082/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  entitlement:
+    image: ${CONTAINER_REGISTRY:-modusacr.azurecr.io}/entitlement:${APP_VERSION:-latest}
+    container_name: modus-entitlement
+    depends_on:
+      postgres-entitlement:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+      schema-registry:
+        condition: service_healthy
+    environment:
+      ENTITLEMENT_DB_HOST:       postgres-entitlement
+      ENTITLEMENT_DB_PASSWORD:   ${ENTITLEMENT_DB_PASSWORD:-changeme}
+      KAFKA_BOOTSTRAP_SERVERS:   kafka:29092
+      KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      IAM_ISSUER_URI:            http://keycloak:8080/realms/modus
+      IAM_JWK_SET_URI:           http://keycloak:8080/realms/modus/protocol/openid-connect/certs
+    ports:
+      - "${PORT_ENTITLEMENT:-8083}:8083"
+    networks: [modus-net]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8083/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  feature-control:
+    image: ${CONTAINER_REGISTRY:-modusacr.azurecr.io}/feature-control:${APP_VERSION:-latest}
+    container_name: modus-feature-control
+    depends_on:
+      postgres-feature:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+      schema-registry:
+        condition: service_healthy
+    environment:
+      FEATURE_DB_HOST:           postgres-feature
+      FEATURE_DB_PASSWORD:       ${FEATURE_DB_PASSWORD:-changeme}
+      KAFKA_BOOTSTRAP_SERVERS:   kafka:29092
+      KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      IAM_ISSUER_URI:            http://keycloak:8080/realms/modus
+      IAM_JWK_SET_URI:           http://keycloak:8080/realms/modus/protocol/openid-connect/certs
+    ports:
+      - "${PORT_FEATURE_CONTROL:-8084}:8084"
+    networks: [modus-net]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8084/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  named-user-license:
+    image: ${CONTAINER_REGISTRY:-modusacr.azurecr.io}/named-user-license:${APP_VERSION:-latest}
+    container_name: modus-named-user-license
+    depends_on:
+      postgres-named-license:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+      schema-registry:
+        condition: service_healthy
+    environment:
+      NAMED_LICENSE_DB_HOST:     postgres-named-license
+      NAMED_LICENSE_DB_PASSWORD: ${NAMED_LICENSE_DB_PASSWORD:-changeme}
+      KAFKA_BOOTSTRAP_SERVERS:   kafka:29092
+      KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      IAM_ISSUER_URI:            http://keycloak:8080/realms/modus
+      IAM_JWK_SET_URI:           http://keycloak:8080/realms/modus/protocol/openid-connect/certs
+    ports:
+      - "${PORT_NAMED_USER_LICENSE:-8085}:8085"
+    networks: [modus-net]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8085/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  user-management:
+    image: ${CONTAINER_REGISTRY:-modusacr.azurecr.io}/user-management:${APP_VERSION:-latest}
+    container_name: modus-user-management
+    depends_on:
+      postgres-user:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+      schema-registry:
+        condition: service_healthy
+    environment:
+      USER_DB_HOST:              postgres-user
+      USER_DB_PASSWORD:          ${USER_DB_PASSWORD:-changeme}
+      KAFKA_BOOTSTRAP_SERVERS:   kafka:29092
+      KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      IAM_ISSUER_URI:            http://keycloak:8080/realms/modus
+      IAM_JWK_SET_URI:           http://keycloak:8080/realms/modus/protocol/openid-connect/certs
+    ports:
+      - "${PORT_USER_MANAGEMENT:-8086}:8086"
+    networks: [modus-net]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8086/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  session:
+    image: ${CONTAINER_REGISTRY:-modusacr.azurecr.io}/session:${APP_VERSION:-latest}
+    container_name: modus-session
+    depends_on:
+      redis:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+      schema-registry:
+        condition: service_healthy
+    environment:
+      REDIS_HOST:                redis
+      REDIS_PASSWORD:            ${REDIS_PASSWORD:-changeme}
+      KAFKA_BOOTSTRAP_SERVERS:   kafka:29092
+      KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      IAM_ISSUER_URI:            http://keycloak:8080/realms/modus
+      IAM_JWK_SET_URI:           http://keycloak:8080/realms/modus/protocol/openid-connect/certs
+    ports:
+      - "${PORT_SESSION:-8087}:8087"
+      - "${GRPC_SESSION_PORT:-9097}:9097"
+    networks: [modus-net]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8087/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  enforcement-engine:
+    image: ${CONTAINER_REGISTRY:-modusacr.azurecr.io}/enforcement-engine:${APP_VERSION:-latest}
+    container_name: modus-enforcement-engine
+    depends_on:
+      redis:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+      schema-registry:
+        condition: service_healthy
+      session:
+        condition: service_healthy
+    environment:
+      REDIS_HOST:                redis
+      REDIS_PASSWORD:            ${REDIS_PASSWORD:-changeme}
+      KAFKA_BOOTSTRAP_SERVERS:   kafka:29092
+      KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      IAM_ISSUER_URI:            http://keycloak:8080/realms/modus
+      IAM_JWK_SET_URI:           http://keycloak:8080/realms/modus/protocol/openid-connect/certs
+      GRPC_SESSION_HOST:         modus-session
+    ports:
+      - "${PORT_ENFORCEMENT_ENGINE:-8088}:8088"
+      - "${GRPC_ENFORCEMENT_PORT:-9098}:9098"
+    networks: [modus-net]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8088/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  usage-metering:
+    image: ${CONTAINER_REGISTRY:-modusacr.azurecr.io}/usage-metering:${APP_VERSION:-latest}
+    container_name: modus-usage-metering
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      schema-registry:
+        condition: service_healthy
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS:   kafka:29092
+      KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      IAM_ISSUER_URI:            http://keycloak:8080/realms/modus
+      IAM_JWK_SET_URI:           http://keycloak:8080/realms/modus/protocol/openid-connect/certs
+    ports:
+      - "${PORT_USAGE_METERING:-8089}:8089"
+    networks: [modus-net]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8089/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  reporting-analytics:
+    image: ${CONTAINER_REGISTRY:-modusacr.azurecr.io}/reporting-analytics:${APP_VERSION:-latest}
+    container_name: modus-reporting-analytics
+    depends_on:
+      postgres-reporting:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+      schema-registry:
+        condition: service_healthy
+    environment:
+      REPORTING_DB_HOST:         postgres-reporting
+      REPORTING_DB_PASSWORD:     ${REPORTING_DB_PASSWORD:-changeme}
+      KAFKA_BOOTSTRAP_SERVERS:   kafka:29092
+      KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      IAM_ISSUER_URI:            http://keycloak:8080/realms/modus
+      IAM_JWK_SET_URI:           http://keycloak:8080/realms/modus/protocol/openid-connect/certs
+    ports:
+      - "${PORT_REPORTING_ANALYTICS:-8090}:8090"
+    networks: [modus-net]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8090/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  notification:
+    image: ${CONTAINER_REGISTRY:-modusacr.azurecr.io}/notification:${APP_VERSION:-latest}
+    container_name: modus-notification
+    depends_on:
+      postgres-notification:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+      schema-registry:
+        condition: service_healthy
+    environment:
+      NOTIFICATION_DB_HOST:      postgres-notification
+      NOTIFICATION_DB_PASSWORD:  ${NOTIFICATION_DB_PASSWORD:-changeme}
+      KAFKA_BOOTSTRAP_SERVERS:   kafka:29092
+      KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      IAM_ISSUER_URI:            http://keycloak:8080/realms/modus
+      IAM_JWK_SET_URI:           http://keycloak:8080/realms/modus/protocol/openid-connect/certs
+      NOTIFICATION_EMAIL_HOST:   ${NOTIFICATION_EMAIL_HOST:-smtp.office365.com}
+      NOTIFICATION_EMAIL_USERNAME: ${NOTIFICATION_EMAIL_USERNAME:-noreply@modus.com}
+      NOTIFICATION_EMAIL_PASSWORD: ${NOTIFICATION_EMAIL_PASSWORD:-changeme}
+    ports:
+      - "${PORT_NOTIFICATION:-8091}:8091"
+    networks: [modus-net]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8091/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  audit:
+    image: ${CONTAINER_REGISTRY:-modusacr.azurecr.io}/audit:${APP_VERSION:-latest}
+    container_name: modus-audit
+    depends_on:
+      postgres-audit:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+      schema-registry:
+        condition: service_healthy
+    environment:
+      AUDIT_DB_HOST:             postgres-audit
+      AUDIT_DB_PASSWORD:         ${AUDIT_DB_PASSWORD:-changeme}
+      KAFKA_BOOTSTRAP_SERVERS:   kafka:29092
+      KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      IAM_ISSUER_URI:            http://keycloak:8080/realms/modus
+      IAM_JWK_SET_URI:           http://keycloak:8080/realms/modus/protocol/openid-connect/certs
+    ports:
+      - "${PORT_AUDIT:-8092}:8092"
+    networks: [modus-net]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8092/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  scheduler-workflow:
+    image: ${CONTAINER_REGISTRY:-modusacr.azurecr.io}/scheduler-workflow:${APP_VERSION:-latest}
+    container_name: modus-scheduler-workflow
+    depends_on:
+      temporal:
+        condition: service_started
+      kafka-init:
+        condition: service_completed_successfully
+      schema-registry:
+        condition: service_healthy
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS:   kafka:29092
+      KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      IAM_ISSUER_URI:            http://keycloak:8080/realms/modus
+      IAM_JWK_SET_URI:           http://keycloak:8080/realms/modus/protocol/openid-connect/certs
+      TEMPORAL_SERVICE_ADDRESS:  temporal:7233
+      SUBSCRIPTION_PLAN_HOST:    modus-subscription-plan
+      ENTITLEMENT_HOST:          modus-entitlement
+      NOTIFICATION_HOST:         modus-notification
+    ports:
+      - "${PORT_SCHEDULER_WORKFLOW:-8093}:8093"
+    networks: [modus-net]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8093/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  api-gateway:
+    image: ${CONTAINER_REGISTRY:-modusacr.azurecr.io}/api-gateway:${APP_VERSION:-latest}
+    container_name: modus-api-gateway
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    environment:
+      REDIS_HOST:                  redis
+      REDIS_PASSWORD:              ${REDIS_PASSWORD:-changeme}
+      IAM_ISSUER_URI:              http://keycloak:8080/realms/modus
+      IAM_JWK_SET_URI:             http://keycloak:8080/realms/modus/protocol/openid-connect/certs
+      TENANT_MANAGEMENT_HOST:      modus-tenant-management
+      SUBSCRIPTION_PLAN_HOST:      modus-subscription-plan
+      ENTITLEMENT_HOST:            modus-entitlement
+      FEATURE_CONTROL_HOST:        modus-feature-control
+      NAMED_USER_LICENSE_HOST:     modus-named-user-license
+      USER_MANAGEMENT_HOST:        modus-user-management
+      ENFORCEMENT_ENGINE_HOST:     modus-enforcement-engine
+      USAGE_METERING_HOST:         modus-usage-metering
+      REPORTING_ANALYTICS_HOST:    modus-reporting-analytics
+      NOTIFICATION_HOST:           modus-notification
+      AUDIT_HOST:                  modus-audit
+      SCHEDULER_WORKFLOW_HOST:     modus-scheduler-workflow
+    ports:
+      - "8080:8080"
+    networks: [modus-net]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s

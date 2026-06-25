@@ -1,0 +1,88 @@
+server:
+  port: ${PORT_AUDIT:8092}
+
+spring:
+  application:
+    name: audit
+  config:
+    import: "optional:azure-app-configuration:"
+
+  datasource:
+    url:               jdbc:postgresql://${AUDIT_DB_HOST:localhost}:${AUDIT_DB_PORT:5432}/${AUDIT_DB_NAME:modus_audit}
+    username:          ${AUDIT_DB_USERNAME:modus_audit_user}
+    password:          ${AUDIT_DB_PASSWORD:changeme}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${AUDIT_DB_POOL_SIZE:10}
+      pool-name:         AuditHikariPool
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+  flyway:
+    enabled:             ${FLYWAY_ENABLED:true}
+    baseline-on-migrate: ${FLYWAY_BASELINE_ON_MIGRATE:true}
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    properties:
+      security.protocol:   ${KAFKA_SECURITY_PROTOCOL:PLAINTEXT}
+      sasl.mechanism:      ${KAFKA_SASL_MECHANISM:PLAIN}
+      sasl.jaas.config:    ${KAFKA_SASL_JAAS_CONFIG:}
+      schema.registry.url: ${KAFKA_SCHEMA_REGISTRY_URL:http://localhost:8081}
+    consumer:
+      group-id:           ${KAFKA_CONSUMER_GROUP_PREFIX:modus}-audit
+      auto-offset-reset:  ${KAFKA_CONSUMER_AUTO_OFFSET_RESET:earliest}
+      enable-auto-commit: ${KAFKA_CONSUMER_ENABLE_AUTO_COMMIT:false}
+      key-deserializer:   org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri:  ${IAM_ISSUER_URI:http://localhost:8080/realms/modus}
+          jwk-set-uri: ${IAM_JWK_SET_URI:http://localhost:8080/realms/modus/protocol/openid-connect/certs}
+
+kafka:
+  topics:
+    audit-events: ${KAFKA_TOPIC_AUDIT_EVENTS:modus.audit.events}
+
+audit:
+  hash-algorithm:     ${AUDIT_HASH_ALGORITHM:SHA-256}
+  worm-enabled:       ${AUDIT_WORM_ENABLED:true}
+  retention-days:     ${AUDIT_RETENTION_DAYS:2555}
+  siem:
+    enabled:   ${AUDIT_SIEM_ENABLED:false}
+    endpoint:  ${AUDIT_SIEM_ENDPOINT:}
+    api-key:   ${AUDIT_SIEM_API_KEY:}
+
+azure:
+  storage:
+    account-name:    ${AZURE_STORAGE_ACCOUNT_NAME:modusauditstorage}
+    container-name:  ${AZURE_STORAGE_CONTAINER_NAME:audit-worm}
+    endpoint:        ${AZURE_STORAGE_ENDPOINT:}
+  keyvault:
+    secret:
+      endpoint: ${AZURE_KEYVAULT_URI:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${MANAGEMENT_ENDPOINTS_ENABLED:health,info,metrics,prometheus}
+  metrics:
+    export:
+      prometheus:
+        enabled: ${METRICS_PROMETHEUS_ENABLED:true}
+  tracing:
+    enabled:     ${TRACING_ENABLED:true}
+    sampling:
+      probability: ${TRACING_SAMPLE_RATE:1.0}
+
+logging:
+  level:
+    root:              ${LOG_LEVEL:INFO}
+    com.modus.license: ${LOG_LEVEL:INFO}

@@ -1,0 +1,74 @@
+server:
+  port: ${PORT_SCHEDULER_WORKFLOW:8093}
+
+spring:
+  application:
+    name: scheduler-workflow
+  config:
+    import: "optional:azure-app-configuration:"
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    properties:
+      security.protocol:   ${KAFKA_SECURITY_PROTOCOL:PLAINTEXT}
+      sasl.mechanism:      ${KAFKA_SASL_MECHANISM:PLAIN}
+      sasl.jaas.config:    ${KAFKA_SASL_JAAS_CONFIG:}
+      schema.registry.url: ${KAFKA_SCHEMA_REGISTRY_URL:http://localhost:8081}
+    producer:
+      key-serializer:   org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+      acks:             ${KAFKA_PRODUCER_ACKS:all}
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri:  ${IAM_ISSUER_URI:http://localhost:8080/realms/modus}
+          jwk-set-uri: ${IAM_JWK_SET_URI:http://localhost:8080/realms/modus/protocol/openid-connect/certs}
+
+temporal:
+  service-address: ${TEMPORAL_SERVICE_ADDRESS:localhost:7233}
+  namespace:       ${TEMPORAL_NAMESPACE:modus-license}
+  task-queue:      ${TEMPORAL_TASK_QUEUE:modus-license-tasks}
+  worker:
+    max-concurrent-activities: ${TEMPORAL_WORKER_MAX_CONCURRENT_ACTIVITIES:100}
+    max-concurrent-workflows:  ${TEMPORAL_WORKER_MAX_CONCURRENT_WORKFLOWS:50}
+
+scheduler:
+  renewal-sweep-cron:   ${SCHEDULER_RENEWAL_SWEEP_CRON:0 0 * * *}
+  expiry-sweep-cron:    ${SCHEDULER_EXPIRY_SWEEP_CRON:0 * * * *}
+  grace-period-days:    ${SCHEDULER_GRACE_PERIOD_DAYS:7}
+
+# Downstream service URLs (called by workflow activities)
+services:
+  subscription:
+    url: http://${SUBSCRIPTION_PLAN_HOST:localhost}:${PORT_SUBSCRIPTION_PLAN:8082}
+  entitlement:
+    url: http://${ENTITLEMENT_HOST:localhost}:${PORT_ENTITLEMENT:8083}
+  notification:
+    url: http://${NOTIFICATION_HOST:localhost}:${PORT_NOTIFICATION:8091}
+
+azure:
+  keyvault:
+    secret:
+      endpoint: ${AZURE_KEYVAULT_URI:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${MANAGEMENT_ENDPOINTS_ENABLED:health,info,metrics,prometheus}
+  metrics:
+    export:
+      prometheus:
+        enabled: ${METRICS_PROMETHEUS_ENABLED:true}
+  tracing:
+    enabled:     ${TRACING_ENABLED:true}
+    sampling:
+      probability: ${TRACING_SAMPLE_RATE:1.0}
+
+logging:
+  level:
+    root:              ${LOG_LEVEL:INFO}
+    com.modus.license: ${LOG_LEVEL:INFO}
+    io.temporal:       ${LOG_LEVEL:INFO}

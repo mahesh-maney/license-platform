@@ -1,0 +1,69 @@
+{
+  "type": "record",
+  "name": "UsageEvent",
+  "namespace": "com.modus.license.events.usage",
+  "doc": "Usage metering events for metered subscriptions. Topic: modus.usage.events. Key: tenantId.",
+  "fields": [
+    {
+      "name": "metadata",
+      "type": "com.modus.license.events.common.EventMetadata"
+    },
+    {
+      "name": "usageId",
+      "type": "string",
+      "doc": "UUID of this usage record."
+    },
+    {
+      "name": "tenantId",
+      "type": "string"
+    },
+    {
+      "name": "userId",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "User who triggered the usage. Null for system-generated events."
+    },
+    {
+      "name": "featureKey",
+      "type": "string",
+      "doc": "Feature or capability being metered."
+    },
+    {
+      "name": "metricName",
+      "type": "string",
+      "doc": "Metric being tracked, e.g. API_CALLS, STORAGE_GB, EXPORTS."
+    },
+    {
+      "name": "quantity",
+      "type": "double",
+      "doc": "Usage quantity for this event."
+    },
+    {
+      "name": "unit",
+      "type": "string",
+      "doc": "Unit of measurement, e.g. CALLS, GB, RECORDS."
+    },
+    {
+      "name": "cumulativeTotal",
+      "type": ["null", "double"],
+      "default": null,
+      "doc": "Running total for the billing period. Present on USAGE_AGGREGATED events."
+    },
+    {
+      "name": "threshold",
+      "type": ["null", "double"],
+      "default": null,
+      "doc": "Limit that was reached. Present on USAGE_THRESHOLD_REACHED / USAGE_LIMIT_EXCEEDED."
+    },
+    {
+      "name": "windowStart",
+      "type": {"type": "long", "logicalType": "timestamp-millis"},
+      "doc": "Start of the aggregation window."
+    },
+    {
+      "name": "windowEnd",
+      "type": {"type": "long", "logicalType": "timestamp-millis"},
+      "doc": "End of the aggregation window."
+    }
+  ]
+}

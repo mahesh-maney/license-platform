@@ -1,0 +1,90 @@
+{
+  "type": "record",
+  "name": "AuditEvent",
+  "namespace": "com.modus.license.events.audit",
+  "doc": "Universal audit trail emitted by every service on every significant action. Topic: modus.audit.events. Key: tenantId.",
+  "fields": [
+    {
+      "name": "metadata",
+      "type": "com.modus.license.events.common.EventMetadata"
+    },
+    {
+      "name": "auditId",
+      "type": "string",
+      "doc": "UUID of this audit log entry."
+    },
+    {
+      "name": "tenantId",
+      "type": "string"
+    },
+    {
+      "name": "actorId",
+      "type": "string",
+      "doc": "UUID of the user or service account that performed the action."
+    },
+    {
+      "name": "actorType",
+      "type": "string",
+      "doc": "USER | SERVICE_ACCOUNT | SYSTEM."
+    },
+    {
+      "name": "action",
+      "type": "string",
+      "doc": "Verb describing the operation, e.g. CREATE, UPDATE, DELETE, SUSPEND, LOGIN."
+    },
+    {
+      "name": "resourceType",
+      "type": "string",
+      "doc": "Domain object type, e.g. TENANT, USER, SUBSCRIPTION, ENTITLEMENT."
+    },
+    {
+      "name": "resourceId",
+      "type": "string",
+      "doc": "UUID of the affected resource."
+    },
+    {
+      "name": "outcome",
+      "type": "string",
+      "doc": "SUCCESS | FAILURE | DENIED."
+    },
+    {
+      "name": "serviceName",
+      "type": "string",
+      "doc": "Name of the microservice that emitted this entry."
+    },
+    {
+      "name": "ipAddress",
+      "type": ["null", "string"],
+      "default": null
+    },
+    {
+      "name": "userAgent",
+      "type": ["null", "string"],
+      "default": null
+    },
+    {
+      "name": "requestId",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "HTTP request / gRPC call ID."
+    },
+    {
+      "name": "before",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "JSON snapshot of the resource state before the change."
+    },
+    {
+      "name": "after",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "JSON snapshot of the resource state after the change."
+    },
+    {
+      "name": "failureReason",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Present on FAILURE / DENIED outcomes."
+    }
+  ]
+}

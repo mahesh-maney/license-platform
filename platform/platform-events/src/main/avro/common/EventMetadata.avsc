@@ -1,0 +1,46 @@
+{
+  "type": "record",
+  "name": "EventMetadata",
+  "namespace": "com.modus.license.events.common",
+  "doc": "Standard envelope carried on every Kafka event across all topics.",
+  "fields": [
+    {
+      "name": "eventId",
+      "type": "string",
+      "doc": "UUID of this specific event occurrence."
+    },
+    {
+      "name": "eventType",
+      "type": "string",
+      "doc": "Discriminator string, e.g. TENANT_CREATED, SESSION_STARTED."
+    },
+    {
+      "name": "tenantId",
+      "type": "string",
+      "doc": "UUID of the tenant that owns this event."
+    },
+    {
+      "name": "actorId",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "UUID of the user or system actor who triggered the event."
+    },
+    {
+      "name": "timestamp",
+      "type": {"type": "long", "logicalType": "timestamp-millis"},
+      "doc": "Event creation time in epoch milliseconds (UTC)."
+    },
+    {
+      "name": "correlationId",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Distributed trace / request correlation ID."
+    },
+    {
+      "name": "schemaVersion",
+      "type": "int",
+      "default": 1,
+      "doc": "Monotonically increasing schema version for this event type."
+    }
+  ]
+}

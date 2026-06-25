@@ -1,0 +1,80 @@
+{
+  "type": "record",
+  "name": "NotificationEvent",
+  "namespace": "com.modus.license.events.notification",
+  "doc": "Notification requests and delivery status. Topic: modus.notification.events. Key: tenantId.",
+  "fields": [
+    {
+      "name": "metadata",
+      "type": "com.modus.license.events.common.EventMetadata"
+    },
+    {
+      "name": "notificationId",
+      "type": "string",
+      "doc": "UUID of the notification record."
+    },
+    {
+      "name": "tenantId",
+      "type": "string"
+    },
+    {
+      "name": "recipientId",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "UUID of the target user, if applicable."
+    },
+    {
+      "name": "recipientEmail",
+      "type": ["null", "string"],
+      "default": null
+    },
+    {
+      "name": "notificationType",
+      "type": "string",
+      "doc": "Domain reason: TRIAL_EXPIRING | SEAT_LIMIT_REACHED | PAYMENT_FAILED | SUBSCRIPTION_RENEWED | LICENSE_ASSIGNED | etc."
+    },
+    {
+      "name": "channel",
+      "type": "string",
+      "doc": "Delivery channel: EMAIL | WEBHOOK | IN_APP."
+    },
+    {
+      "name": "templateId",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Email template identifier."
+    },
+    {
+      "name": "subject",
+      "type": ["null", "string"],
+      "default": null
+    },
+    {
+      "name": "payloadJson",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "JSON with template variables or webhook body."
+    },
+    {
+      "name": "webhookUrl",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Target URL for WEBHOOK notifications."
+    },
+    {
+      "name": "status",
+      "type": "string",
+      "doc": "PENDING | SENT | FAILED | RETRYING."
+    },
+    {
+      "name": "retryCount",
+      "type": "int",
+      "default": 0
+    },
+    {
+      "name": "failureReason",
+      "type": ["null", "string"],
+      "default": null
+    }
+  ]
+}

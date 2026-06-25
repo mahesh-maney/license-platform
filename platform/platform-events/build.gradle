@@ -1,0 +1,25 @@
+plugins {
+    alias(libs.plugins.avro)
+}
+
+// platform-events: Avro event schemas — single source of truth for all Kafka events
+dependencies {
+    implementation project(':platform:platform-core')
+    implementation libs.avro
+    implementation libs.bundles.kafka
+    implementation libs.lombok
+}
+
+// Generate Java classes from Avro schemas
+avro {
+    outputCharacterEncoding = 'UTF-8'
+    stringType              = 'String'
+    fieldVisibility         = 'PRIVATE'
+    createSetters           = false
+}
+
+sourceSets {
+    main {
+        java { srcDirs += ['build/generated-main-avro-java'] }
+    }
+}

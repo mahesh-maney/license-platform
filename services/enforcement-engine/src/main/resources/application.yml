@@ -1,0 +1,115 @@
+server:
+  port: ${PORT_ENFORCEMENT_ENGINE:8088}
+
+spring:
+  application:
+    name: enforcement-engine
+  config:
+    import: "optional:azure-app-configuration:"
+
+  # WebFlux — reactive, non-blocking
+  webflux:
+    base-path: /
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri:  ${IAM_ISSUER_URI:http://localhost:8080/realms/modus}
+          jwk-set-uri: ${IAM_JWK_SET_URI:http://localhost:8080/realms/modus/protocol/openid-connect/certs}
+
+  data:
+    redis:
+      host:     ${REDIS_HOST:localhost}
+      port:     ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:changeme}
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:false}
+      timeout:  ${REDIS_TIMEOUT_MS:2000}ms
+      lettuce:
+        pool:
+          max-active: ${REDIS_POOL_MAX_ACTIVE:50}
+          max-idle:   ${REDIS_POOL_MAX_IDLE:20}
+          min-idle:   ${REDIS_POOL_MIN_IDLE:5}
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    properties:
+      security.protocol:   ${KAFKA_SECURITY_PROTOCOL:PLAINTEXT}
+      sasl.mechanism:      ${KAFKA_SASL_MECHANISM:PLAIN}
+      sasl.jaas.config:    ${KAFKA_SASL_JAAS_CONFIG:}
+      schema.registry.url: ${KAFKA_SCHEMA_REGISTRY_URL:http://localhost:8081}
+    consumer:
+      group-id:             ${KAFKA_CONSUMER_GROUP_PREFIX:modus}-enforcement
+      auto-offset-reset:    ${KAFKA_CONSUMER_AUTO_OFFSET_RESET:earliest}
+      enable-auto-commit:   ${KAFKA_CONSUMER_ENABLE_AUTO_COMMIT:false}
+      max-poll-records:     ${KAFKA_CONSUMER_MAX_POLL_RECORDS:500}
+      key-deserializer:     org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer:   io.confluent.kafka.serializers.KafkaAvroDeserializer
+    producer:
+      key-serializer:     org.apache.kafka.common.serialization.StringSerializer
+      value-serializer:   io.confluent.kafka.serializers.KafkaAvroSerializer
+      acks:               ${KAFKA_PRODUCER_ACKS:all}
+
+kafka:
+  topics:
+    entitlement-events:   ${KAFKA_TOPIC_ENTITLEMENT_EVENTS:modus.entitlement.events}
+    enforcement-decisions: ${KAFKA_TOPIC_ENFORCEMENT_DECISIONS:modus.enforcement.decisions}
+
+grpc:
+  server:
+    port:         ${GRPC_ENFORCEMENT_PORT:9098}
+    security:
+      enabled:    ${GRPC_TLS_ENABLED:false}
+  client:
+    session-service:
+      address:   static://${GRPC_SESSION_HOST:localhost}:${GRPC_SESSION_PORT:9097}
+      deadline:  ${GRPC_SESSION_DEADLINE_MS:50}
+      negotiation-type: ${GRPC_TLS_ENABLED:false == 'true' ? 'TLS' : 'PLAINTEXT'}
+
+enforcement:
+  cache-warm-on-startup:    ${ENFORCEMENT_CACHE_WARM_ON_STARTUP:true}
+  decision-timeout-ms:      ${ENFORCEMENT_DECISION_TIMEOUT_MS:200}
+  cache-miss-fallback-db:   ${ENFORCEMENT_CACHE_MISS_FALLBACK_DB:true}
+
+cache:
+  entitlement-ttl-seconds:  ${ENTITLEMENT_CACHE_TTL_SECONDS:300}
+
+platform:
+  jwt:
+    claim-tenant-id: ${JWT_CLAIM_TENANT_ID:tenant_id}
+    claim-roles:     ${JWT_CLAIM_ROLES:roles}
+    claim-user-id:   ${JWT_CLAIM_USER_ID:sub}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${MANAGEMENT_ENDPOINTS_ENABLED:health,info,metrics,prometheus}
+  endpoint:
+    health:
+      show-details: ${MANAGEMENT_HEALTH_SHOW_DETAILS:when-authorized}
+  metrics:
+    export:
+      prometheus:
+        enabled: ${METRICS_PROMETHEUS_ENABLED:true}
+  tracing:
+    enabled:      ${TRACING_ENABLED:true}
+    sampling:
+      probability: ${TRACING_SAMPLE_RATE:1.0}
+
+logging:
+  level:
+    root:              ${LOG_LEVEL:INFO}
+    com.modus.license: ${LOG_LEVEL:INFO}
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+azure:
+  keyvault:
+    secret:
+      endpoint: ${AZURE_KEYVAULT_URI:}

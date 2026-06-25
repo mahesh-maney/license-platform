@@ -1,0 +1,68 @@
+{
+  "type": "record",
+  "name": "EnforcementDecision",
+  "namespace": "com.modus.license.events.enforcement",
+  "doc": "Result of a license enforcement check. Topic: modus.enforcement.decisions. Key: tenantId.",
+  "fields": [
+    {
+      "name": "metadata",
+      "type": "com.modus.license.events.common.EventMetadata"
+    },
+    {
+      "name": "decisionId",
+      "type": "string",
+      "doc": "UUID of this decision record."
+    },
+    {
+      "name": "tenantId",
+      "type": "string"
+    },
+    {
+      "name": "userId",
+      "type": "string"
+    },
+    {
+      "name": "featureKey",
+      "type": "string",
+      "doc": "Feature being accessed."
+    },
+    {
+      "name": "licenseType",
+      "type": "string"
+    },
+    {
+      "name": "decision",
+      "type": "string",
+      "doc": "ALLOWED | DENIED."
+    },
+    {
+      "name": "denialReason",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "SEAT_LIMIT_EXCEEDED | SESSION_LIMIT_EXCEEDED | ENTITLEMENT_EXPIRED | FEATURE_DISABLED | TENANT_SUSPENDED."
+    },
+    {
+      "name": "entitlementId",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Entitlement evaluated, present on ALLOWED decisions."
+    },
+    {
+      "name": "sessionId",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Session UUID checked for concurrent limits."
+    },
+    {
+      "name": "responseTimeMs",
+      "type": "long",
+      "doc": "Enforcement check latency in milliseconds."
+    },
+    {
+      "name": "cacheHit",
+      "type": "boolean",
+      "default": false,
+      "doc": "Whether the decision was served from Redis cache."
+    }
+  ]
+}

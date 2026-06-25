@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package modus.session;
+
+option java_package         = "com.modus.license.session.grpc";
+option java_multiple_files  = true;
+option java_outer_classname = "SessionServiceProto";
+
+/**
+ * Contract copy — used by enforcement-engine to generate client stubs.
+ * Canonical definition lives in services/session/src/main/proto/.
+ */
+service SessionCheckService {
+  rpc GetActiveSessionCount (ActiveSessionCountRequest)
+      returns (ActiveSessionCountResponse);
+  rpc ValidateSession (ValidateSessionRequest)
+      returns (ValidateSessionResponse);
+}
+
+message ActiveSessionCountRequest {
+  string tenant_id = 1;
+}
+
+message ActiveSessionCountResponse {
+  string tenant_id    = 1;
+  int64  active_count = 2;
+}
+
+message ValidateSessionRequest {
+  string session_id = 1;
+  string tenant_id  = 2;
+}
+
+message ValidateSessionResponse {
+  bool   valid      = 1;
+  string user_id    = 2;
+  string license_id = 3;
+}

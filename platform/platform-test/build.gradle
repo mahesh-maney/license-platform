@@ -1,0 +1,20 @@
+// platform-test: shared Testcontainers base classes, test utilities, fixtures
+dependencies {
+    implementation project(':platform:platform-core')
+    implementation project(':platform:platform-events')
+    implementation libs.spring.boot.test
+    implementation libs.bundles.testing
+    implementation libs.testcontainers.kafka
+    implementation libs.testcontainers.postgresql
+    implementation libs.testcontainers.redis
+    implementation libs.spring.kafka.test
+    implementation libs.reactor.test
+    implementation libs.lombok
+
+    // Avro SpecificRecord — platform-events uses it as 'implementation' (not 'api')
+    // so it is not transitively exposed; must be declared explicitly here.
+    implementation libs.avro
+
+    // spring-kafka for @KafkaListener in KafkaTestEventConsumer
+    implementation libs.spring.kafka
+}

@@ -1,0 +1,95 @@
+server:
+  port: ${PORT_NOTIFICATION:8091}
+
+spring:
+  application:
+    name: notification
+  config:
+    import: "optional:azure-app-configuration:"
+
+  datasource:
+    url:               jdbc:postgresql://${NOTIFICATION_DB_HOST:localhost}:${NOTIFICATION_DB_PORT:5432}/${NOTIFICATION_DB_NAME:modus_notification}
+    username:          ${NOTIFICATION_DB_USERNAME:modus_notif_user}
+    password:          ${NOTIFICATION_DB_PASSWORD:changeme}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${NOTIFICATION_DB_POOL_SIZE:10}
+      pool-name:         NotificationHikariPool
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql:  false
+
+  flyway:
+    enabled:             ${FLYWAY_ENABLED:true}
+    baseline-on-migrate: ${FLYWAY_BASELINE_ON_MIGRATE:true}
+
+  mail:
+    host:     ${NOTIFICATION_EMAIL_HOST:smtp.office365.com}
+    port:     ${NOTIFICATION_EMAIL_PORT:587}
+    username: ${NOTIFICATION_EMAIL_USERNAME:noreply@modus.com}
+    password: ${NOTIFICATION_EMAIL_PASSWORD:changeme}
+    properties:
+      mail.smtp.auth:            true
+      mail.smtp.starttls.enable: ${NOTIFICATION_EMAIL_TLS_ENABLED:true}
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    properties:
+      security.protocol:   ${KAFKA_SECURITY_PROTOCOL:PLAINTEXT}
+      sasl.mechanism:      ${KAFKA_SASL_MECHANISM:PLAIN}
+      sasl.jaas.config:    ${KAFKA_SASL_JAAS_CONFIG:}
+      schema.registry.url: ${KAFKA_SCHEMA_REGISTRY_URL:http://localhost:8081}
+    consumer:
+      group-id:           ${KAFKA_CONSUMER_GROUP_PREFIX:modus}-notification
+      auto-offset-reset:  ${KAFKA_CONSUMER_AUTO_OFFSET_RESET:earliest}
+      enable-auto-commit: ${KAFKA_CONSUMER_ENABLE_AUTO_COMMIT:false}
+      key-deserializer:   org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri:  ${IAM_ISSUER_URI:http://localhost:8080/realms/modus}
+          jwk-set-uri: ${IAM_JWK_SET_URI:http://localhost:8080/realms/modus/protocol/openid-connect/certs}
+
+kafka:
+  topics:
+    subscription-events:  ${KAFKA_TOPIC_SUBSCRIPTION_EVENTS:modus.subscription.events}
+    tenant-events:        ${KAFKA_TOPIC_TENANT_EVENTS:modus.tenant.events}
+    notification-events:  ${KAFKA_TOPIC_NOTIFICATION_EVENTS:modus.notification.events}
+
+notification:
+  email:
+    from: ${NOTIFICATION_EMAIL_FROM:noreply@modus.com}
+  webhook:
+    timeout-ms:    ${NOTIFICATION_WEBHOOK_TIMEOUT_MS:5000}
+    retry-max:     ${NOTIFICATION_WEBHOOK_RETRY_MAX:3}
+    retry-delay-ms: ${NOTIFICATION_WEBHOOK_RETRY_DELAY_MS:1000}
+  renewal-warn-days: ${NOTIFICATION_RENEWAL_WARN_DAYS:30,14,7,1}
+
+azure:
+  keyvault:
+    secret:
+      endpoint: ${AZURE_KEYVAULT_URI:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${MANAGEMENT_ENDPOINTS_ENABLED:health,info,metrics,prometheus}
+  metrics:
+    export:
+      prometheus:
+        enabled: ${METRICS_PROMETHEUS_ENABLED:true}
+  tracing:
+    enabled:     ${TRACING_ENABLED:true}
+    sampling:
+      probability: ${TRACING_SAMPLE_RATE:1.0}
+
+logging:
+  level:
+    root:              ${LOG_LEVEL:INFO}
+    com.modus.license: ${LOG_LEVEL:INFO}

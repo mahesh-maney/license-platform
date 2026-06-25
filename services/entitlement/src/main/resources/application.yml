@@ -1,0 +1,94 @@
+server:
+  port: ${PORT_ENTITLEMENT:8083}
+
+spring:
+  application:
+    name: entitlement
+  config:
+    import: "optional:azure-app-configuration:"
+
+  datasource:
+    url:               jdbc:postgresql://${ENTITLEMENT_DB_HOST:localhost}:${ENTITLEMENT_DB_PORT:5432}/${ENTITLEMENT_DB_NAME:modus_entitlement}
+    username:          ${ENTITLEMENT_DB_USERNAME:modus_ent_user}
+    password:          ${ENTITLEMENT_DB_PASSWORD:changeme}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${ENTITLEMENT_DB_POOL_SIZE:20}
+      pool-name:         EntitlementHikariPool
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql:  false
+
+  flyway:
+    enabled:             ${FLYWAY_ENABLED:true}
+    baseline-on-migrate: ${FLYWAY_BASELINE_ON_MIGRATE:true}
+
+  data:
+    redis:
+      host:     ${REDIS_HOST:localhost}
+      port:     ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:changeme}
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:false}
+      timeout:  ${REDIS_TIMEOUT_MS:2000}ms
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    properties:
+      security.protocol:   ${KAFKA_SECURITY_PROTOCOL:PLAINTEXT}
+      sasl.mechanism:      ${KAFKA_SASL_MECHANISM:PLAIN}
+      sasl.jaas.config:    ${KAFKA_SASL_JAAS_CONFIG:}
+      schema.registry.url: ${KAFKA_SCHEMA_REGISTRY_URL:http://localhost:8081}
+    consumer:
+      group-id:           ${KAFKA_CONSUMER_GROUP_PREFIX:modus}-entitlement
+      auto-offset-reset:  ${KAFKA_CONSUMER_AUTO_OFFSET_RESET:earliest}
+      enable-auto-commit: ${KAFKA_CONSUMER_ENABLE_AUTO_COMMIT:false}
+      key-deserializer:   org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
+    producer:
+      key-serializer:   org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+      acks:             ${KAFKA_PRODUCER_ACKS:all}
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri:  ${IAM_ISSUER_URI:http://localhost:8080/realms/modus}
+          jwk-set-uri: ${IAM_JWK_SET_URI:http://localhost:8080/realms/modus/protocol/openid-connect/certs}
+
+kafka:
+  topics:
+    subscription-events: ${KAFKA_TOPIC_SUBSCRIPTION_EVENTS:modus.subscription.events}
+    tenant-events:       ${KAFKA_TOPIC_TENANT_EVENTS:modus.tenant.events}
+    feature-events:      ${KAFKA_TOPIC_FEATURE_EVENTS:modus.feature.events}
+    entitlement-events:  ${KAFKA_TOPIC_ENTITLEMENT_EVENTS:modus.entitlement.events}
+
+cache:
+  entitlement-ttl-seconds: ${ENTITLEMENT_CACHE_TTL_SECONDS:300}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${MANAGEMENT_ENDPOINTS_ENABLED:health,info,metrics,prometheus}
+  metrics:
+    export:
+      prometheus:
+        enabled: ${METRICS_PROMETHEUS_ENABLED:true}
+  tracing:
+    enabled:     ${TRACING_ENABLED:true}
+    sampling:
+      probability: ${TRACING_SAMPLE_RATE:1.0}
+
+logging:
+  level:
+    root:              ${LOG_LEVEL:INFO}
+    com.modus.license: ${LOG_LEVEL:INFO}
+
+azure:
+  keyvault:
+    secret:
+      endpoint: ${AZURE_KEYVAULT_URI:}

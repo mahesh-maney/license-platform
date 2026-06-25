@@ -1,0 +1,77 @@
+global:
+  scrape_interval:     15s
+  evaluation_interval: 15s
+  external_labels:
+    platform: modus-license
+    env:      local
+
+scrape_configs:
+  - job_name: api-gateway
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['host.docker.internal:8080']
+
+  - job_name: tenant-management
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['host.docker.internal:8081']
+
+  - job_name: subscription-plan
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['host.docker.internal:8082']
+
+  - job_name: entitlement
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['host.docker.internal:8083']
+
+  - job_name: feature-control
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['host.docker.internal:8084']
+
+  - job_name: named-user-license
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['host.docker.internal:8085']
+
+  - job_name: user-management
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['host.docker.internal:8086']
+
+  - job_name: session
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['host.docker.internal:8087']
+
+  - job_name: enforcement-engine
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['host.docker.internal:8088']
+
+  - job_name: usage-metering
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['host.docker.internal:8089']
+
+  - job_name: reporting-analytics
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['host.docker.internal:8090']
+
+  - job_name: notification
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['host.docker.internal:8091']
+
+  - job_name: audit
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['host.docker.internal:8092']
+
+  - job_name: scheduler-workflow
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['host.docker.internal:8093']

@@ -1,0 +1,34 @@
+plugins {
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.jib)
+}
+
+dependencies {
+    implementation project(':platform:platform-core')
+    implementation project(':platform:platform-security')
+    implementation project(':platform:platform-observability')
+
+    implementation libs.spring.cloud.gateway
+    implementation libs.spring.cloud.circuitbreaker
+    implementation libs.bundles.redis
+    implementation libs.spring.boot.oauth2.resource
+    implementation libs.spring.boot.actuator
+    implementation libs.spring.boot.security
+    implementation libs.micrometer.prometheus
+    implementation libs.resilience4j.spring.boot
+    implementation libs.resilience4j.reactor
+    implementation libs.bundles.azure
+    implementation libs.springdoc.webflux
+
+    testImplementation project(':platform:platform-test')
+}
+
+jib {
+    from { image = 'eclipse-temurin:21-jre-alpine' }
+    to   { image = "${System.getenv('CONTAINER_REGISTRY') ?: 'modusacr.azurecr.io'}/api-gateway:${project.version}" }
+    container {
+        jvmFlags = ['-XX:+UseZGC', '-XX:+ZGenerational', '--enable-preview', '-Djava.security.egd=file:/dev/./urandom']
+        ports    = ['8080']
+        labels   = [version: project.version, service: 'api-gateway']
+    }
+}

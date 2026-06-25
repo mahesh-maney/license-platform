@@ -1,0 +1,33 @@
+rootProject.name = 'modus-license-platform'
+
+// Platform shared modules
+include 'platform:platform-core'
+include 'platform:platform-events'
+include 'platform:platform-security'
+include 'platform:platform-audit'
+include 'platform:platform-observability'
+include 'platform:platform-test'
+
+// Deployable services
+include 'services:api-gateway'
+include 'services:tenant-management'
+include 'services:subscription-plan'
+include 'services:entitlement'
+include 'services:feature-control'
+include 'services:named-user-license'
+include 'services:user-management'
+include 'services:session'
+include 'services:enforcement-engine'
+include 'services:usage-metering'
+include 'services:reporting-analytics'
+include 'services:notification'
+include 'services:audit'
+include 'services:scheduler-workflow'
+
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+        maven { url 'https://packages.confluent.io/maven/' }
+        maven { url 'https://repo.spring.io/milestone' }
+    }
+}

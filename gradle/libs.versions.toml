@@ -1,0 +1,138 @@
+[versions]
+java                        = "21"
+spring-boot                 = "3.3.6"
+spring-cloud                = "2023.0.3"
+spring-cloud-azure          = "5.18.0"
+grpc                        = "1.64.0"
+protobuf                    = "3.25.3"
+avro                        = "1.11.3"
+confluent                   = "7.6.1"
+r2dbc-postgresql            = "1.0.5.RELEASE"
+flyway                      = "10.13.0"
+testcontainers              = "1.20.1"
+mapstruct                   = "1.5.5.Final"
+lombok                      = "1.18.32"
+opentelemetry               = "1.38.0"
+micrometer-tracing          = "1.3.1"
+temporal                    = "1.24.1"
+resilience4j                = "2.2.0"
+springdoc                   = "2.5.0"
+jjwt                        = "0.12.5"
+commons-lang                = "3.14.0"
+guava                       = "33.2.0-jre"
+jackson                     = "2.17.1"
+grpc-spring-boot            = "3.1.0.RELEASE"
+azure-identity              = "1.12.1"
+redis-testcontainer         = "2.2.2"
+
+[libraries]
+# Spring Boot starters
+spring-boot-webflux             = { module = "org.springframework.boot:spring-boot-starter-webflux" }
+spring-boot-web                 = { module = "org.springframework.boot:spring-boot-starter-web" }
+spring-boot-data-r2dbc          = { module = "org.springframework.boot:spring-boot-starter-data-r2dbc" }
+spring-boot-data-jpa            = { module = "org.springframework.boot:spring-boot-starter-data-jpa" }
+spring-boot-security            = { module = "org.springframework.boot:spring-boot-starter-security" }
+spring-boot-oauth2-resource     = { module = "org.springframework.boot:spring-boot-starter-oauth2-resource-server" }
+spring-boot-validation          = { module = "org.springframework.boot:spring-boot-starter-validation" }
+spring-boot-actuator            = { module = "org.springframework.boot:spring-boot-starter-actuator" }
+spring-boot-cache               = { module = "org.springframework.boot:spring-boot-starter-cache" }
+spring-boot-mail                = { module = "org.springframework.boot:spring-boot-starter-mail" }
+spring-boot-test                = { module = "org.springframework.boot:spring-boot-starter-test" }
+spring-boot-data-redis          = { module = "org.springframework.boot:spring-boot-starter-data-redis-reactive" }
+
+# Spring Cloud
+spring-cloud-gateway            = { module = "org.springframework.cloud:spring-cloud-starter-gateway" }
+spring-cloud-circuitbreaker     = { module = "org.springframework.cloud:spring-cloud-starter-circuitbreaker-reactor-resilience4j" }
+
+# Spring Cloud Azure
+spring-cloud-azure-starter      = { module = "com.azure.spring:spring-cloud-azure-starter", version.ref = "spring-cloud-azure" }
+spring-cloud-azure-keyvault     = { module = "com.azure.spring:spring-cloud-azure-starter-keyvault-secrets", version.ref = "spring-cloud-azure" }
+spring-cloud-azure-appconfiguration = { module = "com.azure.spring:spring-cloud-azure-appconfiguration-config", version.ref = "spring-cloud-azure" }
+spring-cloud-azure-servicebus   = { module = "com.azure.spring:spring-cloud-azure-starter-servicebus", version.ref = "spring-cloud-azure" }
+spring-cloud-azure-storage      = { module = "com.azure.spring:spring-cloud-azure-starter-storage-blob", version.ref = "spring-cloud-azure" }
+azure-identity                  = { module = "com.azure:azure-identity", version.ref = "azure-identity" }
+
+# Kafka / Avro
+spring-kafka                    = { module = "org.springframework.kafka:spring-kafka" }
+spring-kafka-test               = { module = "org.springframework.kafka:spring-kafka-test" }
+kafka-avro-serializer           = { module = "io.confluent:kafka-avro-serializer", version.ref = "confluent" }
+avro                            = { module = "org.apache.avro:avro", version.ref = "avro" }
+
+# gRPC
+grpc-spring-boot-starter        = { module = "net.devh:grpc-server-spring-boot-starter", version.ref = "grpc-spring-boot" }
+grpc-spring-boot-client         = { module = "net.devh:grpc-client-spring-boot-starter", version.ref = "grpc-spring-boot" }
+grpc-stub                       = { module = "io.grpc:grpc-stub", version.ref = "grpc" }
+grpc-protobuf                   = { module = "io.grpc:grpc-protobuf", version.ref = "grpc" }
+protobuf-java                   = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf" }
+
+# Database
+r2dbc-postgresql                = { module = "org.postgresql:r2dbc-postgresql", version.ref = "r2dbc-postgresql" }
+postgresql-jdbc                 = { module = "org.postgresql:postgresql" }
+flyway-core                     = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+flyway-postgresql               = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
+
+# Redis
+lettuce-core                    = { module = "io.lettuce:lettuce-core" }
+
+# Resilience4j
+resilience4j-spring-boot        = { module = "io.github.resilience4j:resilience4j-spring-boot3", version.ref = "resilience4j" }
+resilience4j-reactor            = { module = "io.github.resilience4j:resilience4j-reactor", version.ref = "resilience4j" }
+
+# Observability
+micrometer-tracing-brave        = { module = "io.micrometer:micrometer-tracing-bridge-brave", version.ref = "micrometer-tracing" }
+micrometer-prometheus           = { module = "io.micrometer:micrometer-registry-prometheus" }
+opentelemetry-api               = { module = "io.opentelemetry:opentelemetry-api", version.ref = "opentelemetry" }
+zipkin-reporter                 = { module = "io.zipkin.reporter2:zipkin-reporter-brave" }
+
+# API Docs
+springdoc-webflux               = { module = "org.springdoc:springdoc-openapi-starter-webflux-ui", version.ref = "springdoc" }
+springdoc-webmvc                = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
+
+# Security / JWT
+jjwt-api                        = { module = "io.jsonwebtoken:jjwt-api", version.ref = "jjwt" }
+jjwt-impl                       = { module = "io.jsonwebtoken:jjwt-impl", version.ref = "jjwt" }
+jjwt-jackson                    = { module = "io.jsonwebtoken:jjwt-jackson", version.ref = "jjwt" }
+
+# Workflow
+temporal-sdk                    = { module = "io.temporal:temporal-sdk", version.ref = "temporal" }
+temporal-spring-boot            = { module = "io.temporal:temporal-spring-boot-starter", version.ref = "temporal" }
+
+# Utilities
+lombok                          = { module = "org.projectlombok:lombok", version.ref = "lombok" }
+mapstruct                       = { module = "org.mapstruct:mapstruct", version.ref = "mapstruct" }
+mapstruct-processor             = { module = "org.mapstruct:mapstruct-processor", version.ref = "mapstruct" }
+commons-lang                    = { module = "org.apache.commons:commons-lang3", version.ref = "commons-lang" }
+guava                           = { module = "com.google.guava:guava", version.ref = "guava" }
+jackson-databind                = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+jackson-datatype-jsr310         = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
+
+# Testing
+testcontainers-kafka            = { module = "org.testcontainers:kafka" }
+testcontainers-postgresql       = { module = "org.testcontainers:postgresql" }
+testcontainers-redis            = { module = "com.redis:testcontainers-redis", version.ref = "redis-testcontainer" }
+reactor-test                    = { module = "io.projectreactor:reactor-test" }
+mockito-core                    = { module = "org.mockito:mockito-core" }
+assertj-core                    = { module = "org.assertj:assertj-core" }
+
+[bundles]
+webflux-service     = ["spring-boot-webflux", "spring-boot-validation", "spring-boot-actuator", "spring-boot-oauth2-resource", "micrometer-prometheus", "springdoc-webflux"]
+web-service         = ["spring-boot-web", "spring-boot-validation", "spring-boot-actuator", "spring-boot-oauth2-resource", "micrometer-prometheus", "springdoc-webmvc"]
+kafka               = ["spring-kafka", "kafka-avro-serializer", "avro"]
+grpc-server         = ["grpc-spring-boot-starter", "grpc-stub", "grpc-protobuf", "protobuf-java"]
+grpc-client         = ["grpc-spring-boot-client", "grpc-stub", "grpc-protobuf", "protobuf-java"]
+database-reactive   = ["spring-boot-data-r2dbc", "r2dbc-postgresql", "flyway-core", "flyway-postgresql"]
+database-jpa        = ["spring-boot-data-jpa", "postgresql-jdbc", "flyway-core", "flyway-postgresql"]
+azure               = ["spring-cloud-azure-starter", "spring-cloud-azure-keyvault", "azure-identity"]
+redis               = ["spring-boot-data-redis", "lettuce-core"]
+observability       = ["micrometer-tracing-brave", "micrometer-prometheus", "zipkin-reporter"]
+jwt                 = ["jjwt-api", "jjwt-impl", "jjwt-jackson"]
+utilities           = ["commons-lang", "jackson-databind", "jackson-datatype-jsr310"]
+testing             = ["spring-boot-test", "reactor-test", "mockito-core", "assertj-core"]
+
+[plugins]
+spring-boot         = { id = "org.springframework.boot", version.ref = "spring-boot" }
+spring-deps         = { id = "io.spring.dependency-management", version = "1.1.5" }
+protobuf            = { id = "com.google.protobuf", version = "0.9.4" }
+avro                = { id = "com.github.davidmc24.gradle.plugin.avro", version = "1.9.1" }
+jib                 = { id = "com.google.cloud.tools.jib", version = "3.4.2" }
+sonarqube           = { id = "org.sonarqube", version = "5.0.0.4638" }

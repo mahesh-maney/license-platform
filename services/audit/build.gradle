@@ -1,0 +1,33 @@
+plugins {
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.jib)
+}
+
+dependencies {
+    implementation project(':platform:platform-core')
+    implementation project(':platform:platform-events')
+    implementation project(':platform:platform-security')
+    implementation project(':platform:platform-observability')
+
+    implementation libs.bundles.web.service
+    implementation libs.bundles.database.jpa
+    implementation libs.bundles.kafka
+    implementation libs.bundles.azure
+    implementation libs.spring.cloud.azure.storage     // WORM store via Azure Blob immutable storage
+    implementation libs.mapstruct
+    implementation libs.lombok
+
+    testImplementation project(':platform:platform-test')
+    testImplementation libs.testcontainers.postgresql
+    testImplementation libs.testcontainers.kafka
+}
+
+jib {
+    from { image = 'eclipse-temurin:21-jre-alpine' }
+    to   { image = "${System.getenv('CONTAINER_REGISTRY') ?: 'modusacr.azurecr.io'}/audit:${project.version}" }
+    container {
+        jvmFlags = ['-XX:+UseZGC', '-XX:+ZGenerational', '--enable-preview', '-Djava.security.egd=file:/dev/./urandom']
+        ports    = ['8092']
+        labels   = [version: project.version, service: 'audit']
+    }
+}

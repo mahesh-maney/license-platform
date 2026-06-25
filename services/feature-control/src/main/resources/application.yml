@@ -1,0 +1,73 @@
+server:
+  port: ${PORT_FEATURE_CONTROL:8084}
+
+spring:
+  application:
+    name: feature-control
+  config:
+    import: "optional:azure-app-configuration:"
+
+  datasource:
+    url:               jdbc:postgresql://${FEATURE_DB_HOST:localhost}:${FEATURE_DB_PORT:5432}/${FEATURE_DB_NAME:modus_feature}
+    username:          ${FEATURE_DB_USERNAME:modus_feat_user}
+    password:          ${FEATURE_DB_PASSWORD:changeme}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${FEATURE_DB_POOL_SIZE:10}
+      pool-name:         FeatureHikariPool
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+  flyway:
+    enabled:             ${FLYWAY_ENABLED:true}
+    baseline-on-migrate: ${FLYWAY_BASELINE_ON_MIGRATE:true}
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    properties:
+      security.protocol:   ${KAFKA_SECURITY_PROTOCOL:PLAINTEXT}
+      sasl.mechanism:      ${KAFKA_SASL_MECHANISM:PLAIN}
+      sasl.jaas.config:    ${KAFKA_SASL_JAAS_CONFIG:}
+      schema.registry.url: ${KAFKA_SCHEMA_REGISTRY_URL:http://localhost:8081}
+    producer:
+      key-serializer:   org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+      acks:             ${KAFKA_PRODUCER_ACKS:all}
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri:  ${IAM_ISSUER_URI:http://localhost:8080/realms/modus}
+          jwk-set-uri: ${IAM_JWK_SET_URI:http://localhost:8080/realms/modus/protocol/openid-connect/certs}
+
+kafka:
+  topics:
+    feature-events: ${KAFKA_TOPIC_FEATURE_EVENTS:modus.feature.events}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${MANAGEMENT_ENDPOINTS_ENABLED:health,info,metrics,prometheus}
+  metrics:
+    export:
+      prometheus:
+        enabled: ${METRICS_PROMETHEUS_ENABLED:true}
+  tracing:
+    enabled:     ${TRACING_ENABLED:true}
+    sampling:
+      probability: ${TRACING_SAMPLE_RATE:1.0}
+
+logging:
+  level:
+    root:              ${LOG_LEVEL:INFO}
+    com.modus.license: ${LOG_LEVEL:INFO}
+
+azure:
+  keyvault:
+    secret:
+      endpoint: ${AZURE_KEYVAULT_URI:}

@@ -1,0 +1,82 @@
+plugins {
+    alias(libs.plugins.spring.boot)   apply false
+    alias(libs.plugins.spring.deps)   apply false
+    alias(libs.plugins.protobuf)      apply false
+    alias(libs.plugins.avro)          apply false
+    alias(libs.plugins.jib)           apply false
+    alias(libs.plugins.sonarqube)
+}
+
+group = 'com.modus.license'
+version = System.getenv('APP_VERSION') ?: '1.0.0-SNAPSHOT'
+
+// BOM versions — kept in sync with gradle/libs.versions.toml
+ext {
+    springBootVersion       = '3.3.6'
+    springCloudVersion      = '2023.0.3'
+    springCloudAzureVersion = '5.18.0'
+    testcontainersVersion   = '1.20.1'
+}
+
+subprojects {
+    group   = rootProject.group
+    version = rootProject.version
+
+    apply plugin: 'java'
+    apply plugin: 'io.spring.dependency-management'
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.compilerArgs += ['--enable-preview']
+        options.release = 21
+    }
+
+    tasks.withType(Test).configureEach {
+        jvmArgs '--enable-preview'
+        useJUnitPlatform()
+        testLogging {
+            events 'passed', 'skipped', 'failed'
+        }
+    }
+
+    tasks.withType(JavaExec).configureEach {
+        jvmArgs '--enable-preview'
+    }
+
+    dependencyManagement {
+        imports {
+            mavenBom "org.springframework.boot:spring-boot-dependencies:${rootProject.ext.springBootVersion}"
+            mavenBom "org.springframework.cloud:spring-cloud-dependencies:${rootProject.ext.springCloudVersion}"
+            mavenBom "com.azure.spring:spring-cloud-azure-dependencies:${rootProject.ext.springCloudAzureVersion}"
+            mavenBom "org.testcontainers:testcontainers-bom:${rootProject.ext.testcontainersVersion}"
+        }
+    }
+
+    dependencies {
+        compileOnly         libs.lombok
+        annotationProcessor libs.lombok
+        annotationProcessor libs.mapstruct.processor
+        testCompileOnly     libs.lombok
+        testAnnotationProcessor libs.lombok
+        testImplementation  libs.bundles.testing
+    }
+
+    configurations.all {
+        resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+    }
+}
+
+sonarqube {
+    properties {
+        property 'sonar.host.url',   System.getenv('SONAR_HOST_URL')    ?: 'http://localhost:9000'
+        property 'sonar.token',      System.getenv('SONAR_TOKEN')       ?: ''
+        property 'sonar.projectKey', System.getenv('SONAR_PROJECT_KEY') ?: 'modus-license-platform'
+        property 'sonar.projectName','Modus License Platform'
+        property 'sonar.java.source','21'
+    }
+}

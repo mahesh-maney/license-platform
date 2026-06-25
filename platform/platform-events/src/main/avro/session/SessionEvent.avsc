@@ -1,0 +1,62 @@
+{
+  "type": "record",
+  "name": "SessionEvent",
+  "namespace": "com.modus.license.events.session",
+  "doc": "User session lifecycle events for concurrent-license tracking. Topic: modus.session.events. Key: sessionId.",
+  "fields": [
+    {
+      "name": "metadata",
+      "type": "com.modus.license.events.common.EventMetadata"
+    },
+    {
+      "name": "sessionId",
+      "type": "string",
+      "doc": "UUID of the session."
+    },
+    {
+      "name": "tenantId",
+      "type": "string"
+    },
+    {
+      "name": "userId",
+      "type": "string"
+    },
+    {
+      "name": "licenseId",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Named-user license UUID held by this session, if applicable."
+    },
+    {
+      "name": "clientIp",
+      "type": ["null", "string"],
+      "default": null
+    },
+    {
+      "name": "userAgent",
+      "type": ["null", "string"],
+      "default": null
+    },
+    {
+      "name": "startedAt",
+      "type": {"type": "long", "logicalType": "timestamp-millis"}
+    },
+    {
+      "name": "lastSeenAt",
+      "type": {"type": "long", "logicalType": "timestamp-millis"},
+      "doc": "Last heartbeat timestamp."
+    },
+    {
+      "name": "endedAt",
+      "type": ["null", {"type": "long", "logicalType": "timestamp-millis"}],
+      "default": null,
+      "doc": "Present on SESSION_ENDED and SESSION_EXPIRED events."
+    },
+    {
+      "name": "endReason",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "LOGOUT | TIMEOUT | ADMIN_KILL | LICENSE_REVOKED."
+    }
+  ]
+}

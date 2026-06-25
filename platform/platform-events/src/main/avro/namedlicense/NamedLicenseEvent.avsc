@@ -1,0 +1,57 @@
+{
+  "type": "record",
+  "name": "NamedLicenseEvent",
+  "namespace": "com.modus.license.events.namedlicense",
+  "doc": "Named-user seat assignment changes. Topic: modus.named-license.events. Key: licenseId.",
+  "fields": [
+    {
+      "name": "metadata",
+      "type": "com.modus.license.events.common.EventMetadata"
+    },
+    {
+      "name": "licenseId",
+      "type": "string",
+      "doc": "UUID of the named-user license record."
+    },
+    {
+      "name": "tenantId",
+      "type": "string"
+    },
+    {
+      "name": "planId",
+      "type": "string"
+    },
+    {
+      "name": "totalSeats",
+      "type": "int",
+      "doc": "Total seat count for the tenant's licence pool."
+    },
+    {
+      "name": "usedSeats",
+      "type": "int",
+      "doc": "Seats in use after this event."
+    },
+    {
+      "name": "assignedUserId",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "User UUID being assigned a seat. Present on LICENSE_ASSIGNED."
+    },
+    {
+      "name": "revokedUserId",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "User UUID whose seat is revoked. Present on LICENSE_REVOKED / LICENSE_TRANSFERRED."
+    },
+    {
+      "name": "previousSeatCount",
+      "type": ["null", "int"],
+      "default": null,
+      "doc": "Seat count before this change. Present on SEAT_LIMIT_CHANGED."
+    },
+    {
+      "name": "effectiveAt",
+      "type": {"type": "long", "logicalType": "timestamp-millis"}
+    }
+  ]
+}

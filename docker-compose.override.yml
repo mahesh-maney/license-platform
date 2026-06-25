@@ -1,0 +1,182 @@
+# ============================================================
+# MODUS LICENSE PLATFORM — Local bootRun Override
+# ============================================================
+# Docker Compose merges this file automatically with
+# docker-compose.yml when you run `docker compose up`.
+#
+# PURPOSE: gate all application services behind the "app"
+# profile so that plain `docker compose up` starts only
+# infrastructure. Services are developed locally via:
+#
+#   ./gradlew :services:<name>:bootRun
+#
+# Fully-containerised run (e.g. smoke test or CI):
+#   docker compose --profile app up --build
+#
+# Single containerised service alongside local infra:
+#   docker compose --profile app up tenant-management
+# ============================================================
+
+name: modus-license
+
+services:
+
+  # ----------------------------------------------------------
+  # Infrastructure tweaks for local dev
+  # ----------------------------------------------------------
+
+  # Reduce Kafka log verbosity locally
+  kafka:
+    environment:
+      KAFKA_LOG4J_LOGGERS: "kafka=WARN,kafka.controller=WARN,kafka.log.LogCleaner=WARN,state.change.logger=WARN,kafka.producer.async.DefaultEventHandler=WARN"
+
+  # ----------------------------------------------------------
+  # Local-dev tooling (not in main compose)
+  # ----------------------------------------------------------
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    container_name: modus-kafka-ui
+    depends_on:
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
+    environment:
+      KAFKA_CLUSTERS_0_NAME:                    local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS:        kafka:29092
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY:          http://schema-registry:8081
+      DYNAMIC_CONFIG_ENABLED:                   true
+    ports:
+      - "9080:8080"
+    networks: [modus-net]
+
+  mailpit:
+    image: axllent/mailpit:v1.19
+    container_name: modus-mailpit
+    ports:
+      - "1025:1025"   # SMTP — point NOTIFICATION_EMAIL_HOST=localhost, PORT=1025
+      - "8025:8025"   # Web UI
+    networks: [modus-net]
+
+  # ----------------------------------------------------------
+  # Application services — "app" profile
+  # Plain `docker compose up` skips these.
+  # Each gets a JVM remote-debug port for IDE attachment.
+  # ----------------------------------------------------------
+
+  tenant-management:
+    profiles: ["app"]
+    environment:
+      LOG_LEVEL: DEBUG
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5081"
+    ports:
+      - "5081:5081"
+
+  subscription-plan:
+    profiles: ["app"]
+    environment:
+      LOG_LEVEL: DEBUG
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5082"
+    ports:
+      - "5082:5082"
+
+  entitlement:
+    profiles: ["app"]
+    environment:
+      LOG_LEVEL: DEBUG
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5083"
+    ports:
+      - "5083:5083"
+
+  feature-control:
+    profiles: ["app"]
+    environment:
+      LOG_LEVEL: DEBUG
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5084"
+    ports:
+      - "5084:5084"
+
+  named-user-license:
+    profiles: ["app"]
+    environment:
+      LOG_LEVEL: DEBUG
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5085"
+    ports:
+      - "5085:5085"
+
+  user-management:
+    profiles: ["app"]
+    environment:
+      LOG_LEVEL: DEBUG
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5086"
+    ports:
+      - "5086:5086"
+
+  session:
+    profiles: ["app"]
+    environment:
+      LOG_LEVEL: DEBUG
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5087"
+    ports:
+      - "5087:5087"
+
+  enforcement-engine:
+    profiles: ["app"]
+    environment:
+      LOG_LEVEL: DEBUG
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5088"
+    ports:
+      - "5088:5088"
+
+  usage-metering:
+    profiles: ["app"]
+    environment:
+      LOG_LEVEL: DEBUG
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5089"
+    ports:
+      - "5089:5089"
+
+  reporting-analytics:
+    profiles: ["app"]
+    environment:
+      LOG_LEVEL: DEBUG
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5090"
+    ports:
+      - "5090:5090"
+
+  notification:
+    profiles: ["app"]
+    environment:
+      LOG_LEVEL: DEBUG
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5091"
+      # Point at local Mailpit instead of real SMTP
+      NOTIFICATION_EMAIL_HOST: mailpit
+      NOTIFICATION_EMAIL_PORT: "1025"
+      NOTIFICATION_EMAIL_TLS_ENABLED: "false"
+    ports:
+      - "5091:5091"
+
+  audit:
+    profiles: ["app"]
+    environment:
+      LOG_LEVEL: DEBUG
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5092"
+    ports:
+      - "5092:5092"
+
+  scheduler-workflow:
+    profiles: ["app"]
+    environment:
+      LOG_LEVEL: DEBUG
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5093"
+    ports:
+      - "5093:5093"
+
+  api-gateway:
+    profiles: ["app"]
+    environment:
+      LOG_LEVEL: DEBUG
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5080"
+    ports:
+      - "5080:5080"

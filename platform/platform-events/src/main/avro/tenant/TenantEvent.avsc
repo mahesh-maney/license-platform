@@ -1,0 +1,67 @@
+{
+  "type": "record",
+  "name": "TenantEvent",
+  "namespace": "com.modus.license.events.tenant",
+  "doc": "Covers all lifecycle changes for a tenant. Topic: modus.tenant.events. Key: tenantId.",
+  "fields": [
+    {
+      "name": "metadata",
+      "type": "com.modus.license.events.common.EventMetadata",
+      "doc": "Standard event envelope."
+    },
+    {
+      "name": "tenantId",
+      "type": "string",
+      "doc": "UUID of the affected tenant."
+    },
+    {
+      "name": "slug",
+      "type": "string",
+      "doc": "Unique URL-safe identifier for the tenant (e.g. acme-corp)."
+    },
+    {
+      "name": "name",
+      "type": "string",
+      "doc": "Human-readable tenant display name."
+    },
+    {
+      "name": "adminEmail",
+      "type": "string",
+      "doc": "Primary administrator email address."
+    },
+    {
+      "name": "status",
+      "type": "string",
+      "doc": "Current TenantStatus: ACTIVE | TRIAL | PENDING_SETUP | SUSPENDED | INACTIVE."
+    },
+    {
+      "name": "planTier",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "PlanTier at the time of the event: FREE | STARTER | PROFESSIONAL | ENTERPRISE | CUSTOM."
+    },
+    {
+      "name": "region",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Azure region this tenant's data is hosted in."
+    },
+    {
+      "name": "previousStatus",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Status before this change, present on status-transition events."
+    },
+    {
+      "name": "trialEndsAt",
+      "type": ["null", {"type": "long", "logicalType": "timestamp-millis"}],
+      "default": null,
+      "doc": "Trial expiry timestamp, present on TENANT_TRIAL_STARTED events."
+    },
+    {
+      "name": "effectiveAt",
+      "type": {"type": "long", "logicalType": "timestamp-millis"},
+      "doc": "When this change takes / took effect."
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "type": "record",
+  "name": "BillingEvent",
+  "namespace": "com.modus.license.events.billing",
+  "doc": "Billing and payment lifecycle events. Topic: modus.billing.events. Key: tenantId.",
+  "fields": [
+    {
+      "name": "metadata",
+      "type": "com.modus.license.events.common.EventMetadata"
+    },
+    {
+      "name": "billingId",
+      "type": "string",
+      "doc": "UUID of this billing record."
+    },
+    {
+      "name": "tenantId",
+      "type": "string"
+    },
+    {
+      "name": "subscriptionId",
+      "type": "string"
+    },
+    {
+      "name": "invoiceId",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Present on INVOICE_CREATED, PAYMENT_RECEIVED, PAYMENT_FAILED events."
+    },
+    {
+      "name": "amount",
+      "type": ["null", "double"],
+      "default": null,
+      "doc": "Invoice amount in the smallest currency unit (e.g. cents)."
+    },
+    {
+      "name": "currency",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "ISO 4217 currency code, e.g. USD."
+    },
+    {
+      "name": "billingStatus",
+      "type": "string",
+      "doc": "PENDING | PAID | FAILED | REFUNDED | VOIDED."
+    },
+    {
+      "name": "billingPeriodStart",
+      "type": {"type": "long", "logicalType": "timestamp-millis"}
+    },
+    {
+      "name": "billingPeriodEnd",
+      "type": {"type": "long", "logicalType": "timestamp-millis"}
+    },
+    {
+      "name": "dueDate",
+      "type": ["null", {"type": "long", "logicalType": "timestamp-millis"}],
+      "default": null
+    },
+    {
+      "name": "paidAt",
+      "type": ["null", {"type": "long", "logicalType": "timestamp-millis"}],
+      "default": null
+    },
+    {
+      "name": "failureReason",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Present on PAYMENT_FAILED events."
+    },
+    {
+      "name": "retryScheduledAt",
+      "type": ["null", {"type": "long", "logicalType": "timestamp-millis"}],
+      "default": null,
+      "doc": "Present on PAYMENT_RETRY_SCHEDULED events."
+    }
+  ]
+}

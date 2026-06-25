@@ -1,0 +1,6 @@
+// platform-core: pure domain primitives — no Spring, no framework deps
+dependencies {
+    implementation libs.bundles.utilities
+    implementation libs.mapstruct
+    implementation libs.commons.lang
+}

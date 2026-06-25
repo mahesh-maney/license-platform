@@ -1,0 +1,217 @@
+server:
+  port: ${PORT_API_GATEWAY:8080}
+
+spring:
+  application:
+    name: api-gateway
+  config:
+    import: "optional:azure-app-configuration:"
+
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowed-origins: ${GATEWAY_CORS_ALLOWED_ORIGINS:http://localhost:3000}
+            allowed-methods: ["GET","POST","PUT","PATCH","DELETE","OPTIONS"]
+            allowed-headers: ["*"]
+            allow-credentials: true
+            max-age: ${GATEWAY_CORS_MAX_AGE_SECONDS:3600}
+
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+        - name: RequestRateLimiter
+          args:
+            redis-rate-limiter.replenishRate:    ${GATEWAY_RATE_LIMIT_REPLENISH_RATE:100}
+            redis-rate-limiter.burstCapacity:    ${GATEWAY_RATE_LIMIT_BURST_CAPACITY:200}
+            redis-rate-limiter.requestedTokens:  ${GATEWAY_RATE_LIMIT_REQUESTED_TOKENS:1}
+
+      routes:
+        - id: tenant-management
+          uri: http://${TENANT_MANAGEMENT_HOST:localhost}:${PORT_TENANT_MANAGEMENT:8081}
+          predicates:
+            - Path=/api/v1/tenants/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: tenant-management
+                fallbackUri: forward:/fallback/tenant-management
+
+        - id: subscription-plan
+          uri: http://${SUBSCRIPTION_PLAN_HOST:localhost}:${PORT_SUBSCRIPTION_PLAN:8082}
+          predicates:
+            - Path=/api/v1/plans/**,/api/v1/subscriptions/**,/api/v1/skus/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: subscription-plan
+                fallbackUri: forward:/fallback/subscription-plan
+
+        - id: entitlement
+          uri: http://${ENTITLEMENT_HOST:localhost}:${PORT_ENTITLEMENT:8083}
+          predicates:
+            - Path=/api/v1/entitlements/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: entitlement
+                fallbackUri: forward:/fallback/entitlement
+
+        - id: feature-control
+          uri: http://${FEATURE_CONTROL_HOST:localhost}:${PORT_FEATURE_CONTROL:8084}
+          predicates:
+            - Path=/api/v1/features/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: feature-control
+                fallbackUri: forward:/fallback/feature-control
+
+        - id: named-user-license
+          uri: http://${NAMED_USER_LICENSE_HOST:localhost}:${PORT_NAMED_USER_LICENSE:8085}
+          predicates:
+            - Path=/api/v1/named-licenses/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: named-user-license
+                fallbackUri: forward:/fallback/named-user-license
+
+        - id: user-management
+          uri: http://${USER_MANAGEMENT_HOST:localhost}:${PORT_USER_MANAGEMENT:8086}
+          predicates:
+            - Path=/api/v1/users/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: user-management
+                fallbackUri: forward:/fallback/user-management
+
+        - id: enforcement-engine
+          uri: http://${ENFORCEMENT_ENGINE_HOST:localhost}:${PORT_ENFORCEMENT_ENGINE:8088}
+          predicates:
+            - Path=/api/v1/enforce/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: enforcement-engine
+                fallbackUri: forward:/fallback/enforcement-engine
+
+        - id: reporting-analytics
+          uri: http://${REPORTING_ANALYTICS_HOST:localhost}:${PORT_REPORTING_ANALYTICS:8090}
+          predicates:
+            - Path=/api/v1/reports/**,/api/v1/dashboards/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: reporting-analytics
+                fallbackUri: forward:/fallback/reporting-analytics
+
+        - id: audit
+          uri: http://${AUDIT_HOST:localhost}:${PORT_AUDIT:8092}
+          predicates:
+            - Path=/api/v1/audit/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: audit
+                fallbackUri: forward:/fallback/audit
+
+        - id: usage-metering
+          uri: http://${USAGE_METERING_HOST:localhost}:${PORT_USAGE_METERING:8089}
+          predicates:
+            - Path=/api/v1/usage/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: usage-metering
+                fallbackUri: forward:/fallback/usage-metering
+
+        - id: notification
+          uri: http://${NOTIFICATION_HOST:localhost}:${PORT_NOTIFICATION:8091}
+          predicates:
+            - Path=/api/v1/notifications/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: notification
+                fallbackUri: forward:/fallback/notification
+
+        - id: scheduler-workflow
+          uri: http://${SCHEDULER_WORKFLOW_HOST:localhost}:${PORT_SCHEDULER_WORKFLOW:8093}
+          predicates:
+            - Path=/api/v1/scheduler/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: scheduler-workflow
+                fallbackUri: forward:/fallback/scheduler-workflow
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri:  ${IAM_ISSUER_URI:http://localhost:8080/realms/modus}
+          jwk-set-uri: ${IAM_JWK_SET_URI:http://localhost:8080/realms/modus/protocol/openid-connect/certs}
+
+  data:
+    redis:
+      host:     ${REDIS_HOST:localhost}
+      port:     ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:changeme}
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:false}
+      timeout:  ${REDIS_TIMEOUT_MS:2000}ms
+      lettuce:
+        pool:
+          max-active: ${REDIS_POOL_MAX_ACTIVE:50}
+          max-idle:   ${REDIS_POOL_MAX_IDLE:20}
+          min-idle:   ${REDIS_POOL_MIN_IDLE:5}
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize:                    ${CB_SLIDING_WINDOW_SIZE:10}
+        failureRateThreshold:                 ${CB_FAILURE_RATE_THRESHOLD:50}
+        waitDurationInOpenState:              ${CB_WAIT_DURATION_IN_OPEN_STATE_SECONDS:30}s
+        permittedNumberOfCallsInHalfOpenState: ${CB_PERMITTED_CALLS_IN_HALF_OPEN_STATE:5}
+        registerHealthIndicator:              true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${MANAGEMENT_ENDPOINTS_ENABLED:health,info,metrics,prometheus}
+  endpoint:
+    health:
+      show-details: ${MANAGEMENT_HEALTH_SHOW_DETAILS:when-authorized}
+  metrics:
+    export:
+      prometheus:
+        enabled: ${METRICS_PROMETHEUS_ENABLED:true}
+  tracing:
+    enabled:      ${TRACING_ENABLED:true}
+    sampling:
+      probability: ${TRACING_SAMPLE_RATE:1.0}
+
+logging:
+  level:
+    root:                        ${LOG_LEVEL:INFO}
+    com.modus.license:           ${LOG_LEVEL:INFO}
+    org.springframework.cloud.gateway: ${LOG_LEVEL:INFO}
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+azure:
+  keyvault:
+    secret:
+      endpoint: ${AZURE_KEYVAULT_URI:}
+  appconfiguration:
+    stores[0]:
+      endpoint:  ${AZURE_APPCONFIGURATION_ENDPOINT:}
+      label:     ${AZURE_APPCONFIGURATION_LABEL:local}

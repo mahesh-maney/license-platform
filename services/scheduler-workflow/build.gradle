@@ -1,0 +1,32 @@
+plugins {
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.jib)
+}
+
+// Temporal.io for stateful long-running workflows (renewals, expiry, terminations)
+dependencies {
+    implementation project(':platform:platform-core')
+    implementation project(':platform:platform-events')
+    implementation project(':platform:platform-security')
+    implementation project(':platform:platform-observability')
+
+    implementation libs.bundles.web.service
+    implementation libs.bundles.kafka
+    implementation libs.bundles.azure
+    implementation libs.temporal.sdk
+    implementation libs.temporal.spring.boot
+    implementation libs.lombok
+
+    testImplementation project(':platform:platform-test')
+    testImplementation libs.testcontainers.kafka
+}
+
+jib {
+    from { image = 'eclipse-temurin:21-jre-alpine' }
+    to   { image = "${System.getenv('CONTAINER_REGISTRY') ?: 'modusacr.azurecr.io'}/scheduler-workflow:${project.version}" }
+    container {
+        jvmFlags = ['-XX:+UseZGC', '-XX:+ZGenerational', '--enable-preview', '-Djava.security.egd=file:/dev/./urandom']
+        ports    = ['8093']
+        labels   = [version: project.version, service: 'scheduler-workflow']
+    }
+}

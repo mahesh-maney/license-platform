@@ -1,0 +1,59 @@
+{
+  "type": "record",
+  "name": "FeatureEvent",
+  "namespace": "com.modus.license.events.feature",
+  "doc": "Feature flag changes per tenant or globally. Topic: modus.feature.events. Key: tenantId.",
+  "fields": [
+    {
+      "name": "metadata",
+      "type": "com.modus.license.events.common.EventMetadata"
+    },
+    {
+      "name": "featureId",
+      "type": "string",
+      "doc": "UUID of the feature definition."
+    },
+    {
+      "name": "featureKey",
+      "type": "string",
+      "doc": "Stable string key used in code, e.g. ADVANCED_REPORTING."
+    },
+    {
+      "name": "featureName",
+      "type": "string",
+      "doc": "Human-readable feature name."
+    },
+    {
+      "name": "tenantId",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Tenant this change applies to. Null = global change."
+    },
+    {
+      "name": "status",
+      "type": "string",
+      "doc": "FeatureStatus: ENABLED | DISABLED | BETA | DEPRECATED."
+    },
+    {
+      "name": "previousStatus",
+      "type": ["null", "string"],
+      "default": null
+    },
+    {
+      "name": "minimumPlanTier",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Minimum PlanTier required to access this feature."
+    },
+    {
+      "name": "configJson",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "JSON blob of feature-specific configuration overrides."
+    },
+    {
+      "name": "effectiveAt",
+      "type": {"type": "long", "logicalType": "timestamp-millis"}
+    }
+  ]
+}

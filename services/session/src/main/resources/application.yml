@@ -1,0 +1,81 @@
+server:
+  port: ${PORT_SESSION:8087}
+
+spring:
+  application:
+    name: session
+  config:
+    import: "optional:azure-app-configuration:"
+
+  data:
+    redis:
+      host:     ${REDIS_HOST:localhost}
+      port:     ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:changeme}
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:false}
+      timeout:  ${REDIS_TIMEOUT_MS:2000}ms
+      lettuce:
+        pool:
+          max-active: ${REDIS_POOL_MAX_ACTIVE:50}
+          max-idle:   ${REDIS_POOL_MAX_IDLE:20}
+          min-idle:   ${REDIS_POOL_MIN_IDLE:5}
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    properties:
+      security.protocol:   ${KAFKA_SECURITY_PROTOCOL:PLAINTEXT}
+      sasl.mechanism:      ${KAFKA_SASL_MECHANISM:PLAIN}
+      sasl.jaas.config:    ${KAFKA_SASL_JAAS_CONFIG:}
+      schema.registry.url: ${KAFKA_SCHEMA_REGISTRY_URL:http://localhost:8081}
+    producer:
+      key-serializer:   org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+      acks:             ${KAFKA_PRODUCER_ACKS:all}
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri:  ${IAM_ISSUER_URI:http://localhost:8080/realms/modus}
+          jwk-set-uri: ${IAM_JWK_SET_URI:http://localhost:8080/realms/modus/protocol/openid-connect/certs}
+
+kafka:
+  topics:
+    session-events: ${KAFKA_TOPIC_SESSION_EVENTS:modus.session.events}
+
+grpc:
+  server:
+    port:      ${GRPC_SESSION_PORT:9097}
+    security:
+      enabled: ${GRPC_TLS_ENABLED:false}
+
+session:
+  ttl-seconds:               ${SESSION_TTL_SECONDS:3600}
+  heartbeat-interval-seconds: ${SESSION_HEARTBEAT_INTERVAL_SECONDS:60}
+  max-concurrent-default:    ${SESSION_MAX_CONCURRENT_DEFAULT:50}
+  cleanup-interval-seconds:  ${SESSION_CLEANUP_INTERVAL_SECONDS:30}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${MANAGEMENT_ENDPOINTS_ENABLED:health,info,metrics,prometheus}
+  metrics:
+    export:
+      prometheus:
+        enabled: ${METRICS_PROMETHEUS_ENABLED:true}
+  tracing:
+    enabled:     ${TRACING_ENABLED:true}
+    sampling:
+      probability: ${TRACING_SAMPLE_RATE:1.0}
+
+logging:
+  level:
+    root:              ${LOG_LEVEL:INFO}
+    com.modus.license: ${LOG_LEVEL:INFO}
+
+azure:
+  keyvault:
+    secret:
+      endpoint: ${AZURE_KEYVAULT_URI:}

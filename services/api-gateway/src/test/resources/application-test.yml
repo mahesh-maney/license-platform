@@ -1,0 +1,20 @@
+spring:
+  # Disable Redis auto-configuration — no Redis available in tests
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration
+      - org.springframework.cloud.gateway.config.GatewayRedisAutoConfiguration
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:9000
+
+  cloud:
+    gateway:
+      # Remove global default-filters (rate limiter) — KeyResolver/Redis not available in tests
+      default-filters: []
+      # No routes needed for unit/integration tests of filters and controllers
+      routes: []

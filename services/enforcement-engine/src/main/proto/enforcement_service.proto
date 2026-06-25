@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package modus.enforcement;
+
+option java_package         = "com.modus.license.enforcement.grpc";
+option java_multiple_files  = true;
+option java_outer_classname = "EnforcementServiceProto";
+
+/**
+ * Internal gRPC API called by API-Gateway, SDK clients, or other services
+ * to perform a license enforcement check before granting access to a feature.
+ */
+service EnforcementService {
+
+  /** Evaluate whether access to a feature is allowed for a user. */
+  rpc CheckAccess (CheckAccessRequest) returns (CheckAccessResponse);
+}
+
+// ── Messages ──────────────────────────────────────────────────────────────────
+
+message CheckAccessRequest {
+  string tenant_id   = 1;
+  string user_id     = 2;
+  string feature_key = 3;
+  string session_id  = 4;  // optional — present for concurrent-license checks
+}
+
+message CheckAccessResponse {
+  bool   allowed           = 1;
+  string decision          = 2;  // ALLOWED | DENIED
+  string denial_reason     = 3;  // empty when allowed; e.g. SEAT_LIMIT_EXCEEDED
+  string entitlement_id    = 4;  // empty when denied
+  int64  response_time_ms  = 5;
+  bool   cache_hit         = 6;
+}

@@ -1,0 +1,14 @@
+// platform-audit: shared audit event emission — used by all services
+dependencies {
+    implementation project(':platform:platform-core')
+    implementation project(':platform:platform-events')
+    implementation libs.spring.boot.webflux
+    implementation libs.bundles.kafka
+    implementation libs.bundles.observability
+    implementation libs.lombok
+
+    // AOP for @Auditable aspect (aspectjweaver for @Aspect + pointcut expressions)
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+
+    testImplementation libs.bundles.testing
+}

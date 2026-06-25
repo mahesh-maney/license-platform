@@ -1,0 +1,62 @@
+spring:
+  config:
+    import: ""
+
+  datasource:
+    url:      ${TEST_DATASOURCE_URL:jdbc:tc:postgresql:16-alpine:///modus_entitlement_test}
+    username: test
+    password: test
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: false
+
+  data:
+    redis:
+      host:     ${TEST_REDIS_HOST:localhost}
+      port:     ${TEST_REDIS_PORT:6379}
+      password: ${TEST_REDIS_PASSWORD:test_redis_pass}
+      ssl:
+        enabled: false
+
+  kafka:
+    bootstrap-servers: ${TEST_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    properties:
+      schema.registry.url: mock://test
+    consumer:
+      auto-offset-reset: earliest
+      group-id: entitlement-test
+      properties:
+        specific.avro.reader: true
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri:  ${TEST_JWT_ISSUER_URI:http://localhost:9090/realms/modus}
+          jwk-set-uri: ${TEST_JWK_SET_URI:http://localhost:9090/realms/modus/protocol/openid-connect/certs}
+
+platform:
+  jwt:
+    claim-tenant-id: tenant_id
+    claim-roles:     roles
+    claim-user-id:   sub
+  observability:
+    mdc-enabled: false
+
+cache:
+  entitlement-ttl-seconds: 60
+
+logging:
+  level:
+    root: WARN
+    com.modus.license: DEBUG
+    org.flywaydb: INFO
+
+management:
+  tracing:
+    enabled: false

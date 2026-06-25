@@ -1,0 +1,61 @@
+{
+  "type": "record",
+  "name": "UserEvent",
+  "namespace": "com.modus.license.events.user",
+  "doc": "User lifecycle events within a tenant. Topic: modus.user.events. Key: userId.",
+  "fields": [
+    {
+      "name": "metadata",
+      "type": "com.modus.license.events.common.EventMetadata"
+    },
+    {
+      "name": "userId",
+      "type": "string",
+      "doc": "UUID of the affected user."
+    },
+    {
+      "name": "tenantId",
+      "type": "string"
+    },
+    {
+      "name": "email",
+      "type": "string"
+    },
+    {
+      "name": "firstName",
+      "type": ["null", "string"],
+      "default": null
+    },
+    {
+      "name": "lastName",
+      "type": ["null", "string"],
+      "default": null
+    },
+    {
+      "name": "status",
+      "type": "string",
+      "doc": "ACTIVE | INACTIVE | PENDING_VERIFICATION."
+    },
+    {
+      "name": "previousStatus",
+      "type": ["null", "string"],
+      "default": null
+    },
+    {
+      "name": "roles",
+      "type": {"type": "array", "items": "string"},
+      "default": [],
+      "doc": "Current roles assigned to the user."
+    },
+    {
+      "name": "previousRoles",
+      "type": {"type": "array", "items": "string"},
+      "default": [],
+      "doc": "Roles before this change. Present on USER_ROLE_CHANGED events."
+    },
+    {
+      "name": "effectiveAt",
+      "type": {"type": "long", "logicalType": "timestamp-millis"}
+    }
+  ]
+}
