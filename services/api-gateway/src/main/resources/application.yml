@@ -60,7 +60,7 @@ spring:
         - id: feature-control
           uri: http://${FEATURE_CONTROL_HOST:localhost}:${PORT_FEATURE_CONTROL:8084}
           predicates:
-            - Path=/api/v1/features/**
+            - Path=/api/v1/features/**,/api/v1/tenant-features/**
           filters:
             - name: CircuitBreaker
               args:
@@ -87,10 +87,20 @@ spring:
                 name: user-management
                 fallbackUri: forward:/fallback/user-management
 
+        - id: session
+          uri: http://${SESSION_HOST:localhost}:${PORT_SESSION:8087}
+          predicates:
+            - Path=/api/v1/sessions/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: session
+                fallbackUri: forward:/fallback/session
+
         - id: enforcement-engine
           uri: http://${ENFORCEMENT_ENGINE_HOST:localhost}:${PORT_ENFORCEMENT_ENGINE:8088}
           predicates:
-            - Path=/api/v1/enforce/**
+            - Path=/api/v1/enforcement/**
           filters:
             - name: CircuitBreaker
               args:

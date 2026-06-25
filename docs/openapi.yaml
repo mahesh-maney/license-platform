@@ -1,0 +1,2951 @@
+openapi: 3.0.3
+
+info:
+  title: License Platform API
+  description: |
+    Complete REST API for the License Platform — a multi-tenant SaaS licensing system
+    covering tenant management, subscription plans, entitlements, feature flags,
+    named-user licensing, session management, enforcement, usage metering,
+    reporting, notifications, audit, and workflow scheduling.
+
+    All requests go through the API Gateway at port **8080**.
+    Authentication uses **Bearer JWT tokens** issued by Keycloak (`/realms/license`).
+
+    ## Authentication
+    Obtain a token from Keycloak:
+    ```
+    POST http://localhost:8180/realms/license/protocol/openid-connect/token
+    Content-Type: application/x-www-form-urlencoded
+
+    grant_type=password&client_id=license-api&username=admin&password=admin
+    ```
+    Then set `Authorization: Bearer <token>` on every request.
+  version: 1.0.0
+  contact:
+    name: License Platform Team
+
+servers:
+  - url: http://localhost:8080
+    description: Local development (via API Gateway)
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    TenantId:
+      name: X-Tenant-ID
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Tenant UUID — injected by the gateway from the JWT `tenant_id` claim
+
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        default: 0
+        minimum: 0
+
+    SizeParam:
+      name: size
+      in: query
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+
+  schemas:
+
+    # ── Tenant Management ──────────────────────────────────────────────────────
+
+    CreateTenantRequest:
+      type: object
+      required: [slug, name, displayName, adminEmail, planTier, region]
+      properties:
+        slug:
+          type: string
+          pattern: '^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$'
+          example: acme-corp
+        name:
+          type: string
+          example: ACME Corporation
+        displayName:
+          type: string
+          example: ACME Corp
+        adminEmail:
+          type: string
+          format: email
+          example: admin@acme.com
+        planTier:
+          $ref: '#/components/schemas/PlanTier'
+        region:
+          type: string
+          example: eastus
+
+    TenantResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+          example: acme-corp
+        name:
+          type: string
+        displayName:
+          type: string
+        adminEmail:
+          type: string
+          format: email
+        status:
+          $ref: '#/components/schemas/TenantStatus'
+        planTier:
+          $ref: '#/components/schemas/PlanTier'
+        region:
+          type: string
+        trialEndsAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    TenantStatus:
+      type: string
+      enum: [TRIAL, ACTIVE, SUSPENDED, CANCELLED]
+
+    # ── Subscription Plan ──────────────────────────────────────────────────────
+
+    CreatePlanRequest:
+      type: object
+      required: [name, tier, licenseType, billingCycle, priceInCents, currency]
+      properties:
+        name:
+          type: string
+          example: Enterprise Annual
+        description:
+          type: string
+          example: Full feature access with unlimited seats
+        tier:
+          $ref: '#/components/schemas/PlanTier'
+        licenseType:
+          $ref: '#/components/schemas/LicenseType'
+        maxSeats:
+          type: integer
+          nullable: true
+          description: null = unlimited
+          example: 100
+        billingCycle:
+          $ref: '#/components/schemas/BillingCycle'
+        priceInCents:
+          type: integer
+          format: int64
+          example: 99900
+        currency:
+          type: string
+          example: USD
+        features:
+          type: array
+          items:
+            type: string
+          example: [feature.advanced-reporting, feature.sso, feature.api-access]
+
+    UpdatePlanRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        maxSeats:
+          type: integer
+          nullable: true
+        priceInCents:
+          type: integer
+          format: int64
+        features:
+          type: array
+          items:
+            type: string
+
+    PlanResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        tier:
+          $ref: '#/components/schemas/PlanTier'
+        licenseType:
+          $ref: '#/components/schemas/LicenseType'
+        maxSeats:
+          type: integer
+          nullable: true
+        billingCycle:
+          $ref: '#/components/schemas/BillingCycle'
+        priceInCents:
+          type: integer
+          format: int64
+        currency:
+          type: string
+        active:
+          type: boolean
+        features:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # ── Subscription ───────────────────────────────────────────────────────────
+
+    CreateSubscriptionRequest:
+      type: object
+      required: [planId, billingCycle, seatLimit, startDate]
+      properties:
+        planId:
+          type: string
+          format: uuid
+        billingCycle:
+          $ref: '#/components/schemas/BillingCycle'
+        seatLimit:
+          type: integer
+          example: 50
+        startDate:
+          type: string
+          format: date
+          example: '2025-01-01'
+        endDate:
+          type: string
+          format: date
+          nullable: true
+          description: null = evergreen subscription
+          example: '2025-12-31'
+
+    ChangePlanRequest:
+      type: object
+      required: [newPlanId]
+      properties:
+        newPlanId:
+          type: string
+          format: uuid
+        effectiveDate:
+          type: string
+          format: date
+          nullable: true
+
+    CancelSubscriptionRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          example: Customer requested cancellation
+
+    SubscriptionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        plan:
+          $ref: '#/components/schemas/PlanResponse'
+        status:
+          $ref: '#/components/schemas/SubscriptionStatus'
+        seatLimit:
+          type: integer
+        effectiveSeatLimit:
+          type: integer
+        billingCycle:
+          $ref: '#/components/schemas/BillingCycle'
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+          nullable: true
+        cancellationReason:
+          type: string
+          nullable: true
+        cancelledAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SubscriptionStatus:
+      type: string
+      enum: [PENDING, ACTIVE, SUSPENDED, CANCELLED, EXPIRED]
+
+    # ── Entitlement ────────────────────────────────────────────────────────────
+
+    CreateEntitlementRequest:
+      type: object
+      required: [tenantId, subscriptionId, planId, planTier, licenseType, seatLimit, startDate]
+      properties:
+        tenantId:
+          type: string
+          format: uuid
+        subscriptionId:
+          type: string
+          format: uuid
+        planId:
+          type: string
+          format: uuid
+        planTier:
+          $ref: '#/components/schemas/PlanTier'
+        licenseType:
+          $ref: '#/components/schemas/LicenseType'
+        seatLimit:
+          type: integer
+        featureKeys:
+          type: array
+          items:
+            type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+          nullable: true
+
+    UpdateEntitlementRequest:
+      type: object
+      properties:
+        seatLimit:
+          type: integer
+        featureKeys:
+          type: array
+          items:
+            type: string
+        endDate:
+          type: string
+          format: date
+          nullable: true
+
+    EntitlementResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        subscriptionId:
+          type: string
+          format: uuid
+        planId:
+          type: string
+          format: uuid
+        planTier:
+          $ref: '#/components/schemas/PlanTier'
+        licenseType:
+          $ref: '#/components/schemas/LicenseType'
+        seatLimit:
+          type: integer
+        featureKeys:
+          type: array
+          items:
+            type: string
+        status:
+          $ref: '#/components/schemas/EntitlementStatus'
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    EntitlementStatus:
+      type: string
+      enum: [ACTIVE, REVOKED, SUSPENDED, EXPIRED]
+
+    # ── Feature Control ────────────────────────────────────────────────────────
+
+    CreateFeatureRequest:
+      type: object
+      required: [featureKey, name, minimumPlanTier]
+      properties:
+        featureKey:
+          type: string
+          pattern: '^feature\.[a-z0-9-]+$'
+          example: feature.advanced-reporting
+        name:
+          type: string
+          example: Advanced Reporting
+        description:
+          type: string
+        minimumPlanTier:
+          $ref: '#/components/schemas/PlanTier'
+        configSchemaJson:
+          type: string
+          description: JSON Schema string for per-tenant config overrides
+          nullable: true
+
+    UpdateFeatureRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        minimumPlanTier:
+          $ref: '#/components/schemas/PlanTier'
+        configSchemaJson:
+          type: string
+          nullable: true
+
+    FeatureResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        featureKey:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        minimumPlanTier:
+          $ref: '#/components/schemas/PlanTier'
+        status:
+          $ref: '#/components/schemas/FeatureStatus'
+        configSchemaJson:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    FeatureStatus:
+      type: string
+      enum: [ENABLED, DISABLED, DEPRECATED]
+
+    TenantFeatureResponse:
+      type: object
+      properties:
+        featureKey:
+          type: string
+        name:
+          type: string
+        enabled:
+          type: boolean
+        configOverride:
+          type: object
+          additionalProperties: true
+          nullable: true
+
+    TenantFeatureOverrideRequest:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        configOverride:
+          type: object
+          additionalProperties: true
+          nullable: true
+
+    # ── Named-User License ─────────────────────────────────────────────────────
+
+    CreateNamedLicenseRequest:
+      type: object
+      required: [entitlementId, totalSeats]
+      properties:
+        entitlementId:
+          type: string
+          format: uuid
+        totalSeats:
+          type: integer
+          example: 25
+
+    AssignSeatRequest:
+      type: object
+      required: [userId]
+      properties:
+        userId:
+          type: string
+          format: uuid
+
+    TransferSeatRequest:
+      type: object
+      required: [fromUserId, toUserId]
+      properties:
+        fromUserId:
+          type: string
+          format: uuid
+        toUserId:
+          type: string
+          format: uuid
+
+    LicensePoolResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        planId:
+          type: string
+          format: uuid
+        entitlementId:
+          type: string
+          format: uuid
+        totalSeats:
+          type: integer
+        usedSeats:
+          type: integer
+        availableSeats:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SeatResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        licenseId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        assignedAt:
+          type: string
+          format: date-time
+
+    # ── User Management ────────────────────────────────────────────────────────
+
+    CreateUserRequest:
+      type: object
+      required: [email, firstName, lastName]
+      properties:
+        email:
+          type: string
+          format: email
+          example: john.doe@acme.com
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Doe
+        roles:
+          type: array
+          items:
+            type: string
+          example: [ROLE_USER]
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+
+    UpdateRolesRequest:
+      type: object
+      required: [roles]
+      properties:
+        roles:
+          type: array
+          items:
+            type: string
+          example: [ROLE_USER, ROLE_ADMIN]
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # ── Session ────────────────────────────────────────────────────────────────
+
+    StartSessionRequest:
+      type: object
+      required: [userId]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        licenseId:
+          type: string
+          format: uuid
+          nullable: true
+        clientIp:
+          type: string
+          example: 192.168.1.100
+          nullable: true
+        userAgent:
+          type: string
+          example: Mozilla/5.0
+          nullable: true
+
+    SessionResponse:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        licenseId:
+          type: string
+          format: uuid
+          nullable: true
+        clientIp:
+          type: string
+          nullable: true
+        userAgent:
+          type: string
+          nullable: true
+        startedAt:
+          type: string
+          format: date-time
+        lastSeenAt:
+          type: string
+          format: date-time
+
+    # ── Enforcement Engine ─────────────────────────────────────────────────────
+
+    CheckAccessRequest:
+      type: object
+      required: [userId, featureKey]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        featureKey:
+          type: string
+          example: feature.advanced-reporting
+        sessionId:
+          type: string
+          format: uuid
+          nullable: true
+
+    CheckAccessResponse:
+      type: object
+      properties:
+        allowed:
+          type: boolean
+        decision:
+          type: string
+          enum: [ALLOWED, DENIED]
+        denialReason:
+          type: string
+          nullable: true
+          example: SEAT_LIMIT_EXCEEDED
+        entitlementId:
+          type: string
+          format: uuid
+          nullable: true
+        responseTimeMs:
+          type: integer
+          format: int64
+        cacheHit:
+          type: boolean
+
+    # ── Usage Metering ─────────────────────────────────────────────────────────
+
+    RecordUsageRequest:
+      type: object
+      required: [featureKey, metricName, quantity, unit]
+      properties:
+        userId:
+          type: string
+          format: uuid
+          nullable: true
+        featureKey:
+          type: string
+          example: feature.api-access
+        metricName:
+          type: string
+          example: api_calls
+        quantity:
+          type: number
+          format: double
+          example: 1.0
+        unit:
+          type: string
+          example: CALL
+
+    # ── Reporting & Analytics ──────────────────────────────────────────────────
+
+    UsageReportResponse:
+      type: object
+      properties:
+        tenantId:
+          type: string
+          format: uuid
+        featureKey:
+          type: string
+        metricName:
+          type: string
+        totalQuantity:
+          type: number
+          format: double
+        unit:
+          type: string
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+
+    EntitlementReportResponse:
+      type: object
+      properties:
+        tenantId:
+          type: string
+          format: uuid
+        entitlements:
+          type: array
+          items:
+            $ref: '#/components/schemas/EntitlementResponse'
+        asOf:
+          type: string
+          format: date-time
+
+    SubscriptionSnapshotResponse:
+      type: object
+      properties:
+        subscriptionId:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        planId:
+          type: string
+          format: uuid
+        planTier:
+          $ref: '#/components/schemas/PlanTier'
+        licenseType:
+          $ref: '#/components/schemas/LicenseType'
+        billingCycle:
+          $ref: '#/components/schemas/BillingCycle'
+        seatLimit:
+          type: integer
+        status:
+          $ref: '#/components/schemas/SubscriptionStatus'
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+          nullable: true
+        recordedAt:
+          type: string
+          format: date-time
+
+    ExportRequest:
+      type: object
+      required: [reportType]
+      properties:
+        reportType:
+          type: string
+          enum: [USAGE, ENTITLEMENT, SUBSCRIPTION]
+        from:
+          type: string
+          format: date-time
+          nullable: true
+        to:
+          type: string
+          format: date-time
+          nullable: true
+
+    ExportResponse:
+      type: object
+      properties:
+        exportId:
+          type: string
+          format: uuid
+        reportType:
+          type: string
+        status:
+          type: string
+          enum: [QUEUED, PROCESSING, READY, FAILED]
+        downloadUrl:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    # ── Notification ───────────────────────────────────────────────────────────
+
+    NotificationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        notificationType:
+          type: string
+          example: RENEWAL_WARNING
+        channel:
+          type: string
+          enum: [EMAIL, WEBHOOK, IN_APP]
+        recipientEmail:
+          type: string
+          format: email
+          nullable: true
+        subject:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [PENDING, SENT, FAILED, RETRYING]
+        retryCount:
+          type: integer
+        failureReason:
+          type: string
+          nullable: true
+        sentAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    # ── Audit ──────────────────────────────────────────────────────────────────
+
+    AuditLogResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        actorId:
+          type: string
+          format: uuid
+        actorType:
+          type: string
+          enum: [USER, SERVICE, SYSTEM]
+        action:
+          type: string
+          example: TENANT_CREATED
+        resourceType:
+          type: string
+          example: TENANT
+        resourceId:
+          type: string
+          format: uuid
+        outcome:
+          type: string
+          enum: [SUCCESS, FAILURE]
+        serviceName:
+          type: string
+          example: tenant-management
+        ipAddress:
+          type: string
+          nullable: true
+        userAgent:
+          type: string
+          nullable: true
+        requestId:
+          type: string
+          format: uuid
+        failureReason:
+          type: string
+          nullable: true
+        recordedAt:
+          type: string
+          format: date-time
+        contentHash:
+          type: string
+          description: SHA-256 hash for tamper detection
+
+    # ── Scheduler / Workflow ───────────────────────────────────────────────────
+
+    StartLifecycleRequest:
+      type: object
+      required: [tenantId, subscriptionId, planId, planTier, licenseType, billingCycle, seatLimit, startDate]
+      properties:
+        tenantId:
+          type: string
+          format: uuid
+        subscriptionId:
+          type: string
+          format: uuid
+        planId:
+          type: string
+          format: uuid
+        planTier:
+          $ref: '#/components/schemas/PlanTier'
+        licenseType:
+          $ref: '#/components/schemas/LicenseType'
+        billingCycle:
+          $ref: '#/components/schemas/BillingCycle'
+        seatLimit:
+          type: integer
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+          nullable: true
+
+    # ── Shared Enums ───────────────────────────────────────────────────────────
+
+    PlanTier:
+      type: string
+      enum: [FREE, STARTER, PROFESSIONAL, ENTERPRISE]
+
+    LicenseType:
+      type: string
+      enum: [NAMED_USER, CONCURRENT, SITE, SUBSCRIPTION]
+
+    BillingCycle:
+      type: string
+      enum: [MONTHLY, QUARTERLY, ANNUAL, PERPETUAL]
+
+    # ── Common ─────────────────────────────────────────────────────────────────
+
+    PageMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        error:
+          type: string
+        message:
+          type: string
+        path:
+          type: string
+        requestId:
+          type: string
+          format: uuid
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# PATHS
+# ══════════════════════════════════════════════════════════════════════════════
+paths:
+
+  # ── Tenant Management ──────────────────────────────────────────────────────
+
+  /api/v1/tenants:
+    post:
+      tags: [Tenants]
+      summary: Create tenant
+      operationId: createTenant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTenantRequest'
+            example:
+              slug: acme-corp
+              name: ACME Corporation
+              displayName: ACME Corp
+              adminEmail: admin@acme.com
+              planTier: ENTERPRISE
+              region: eastus
+      responses:
+        '201':
+          description: Tenant created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Slug already exists
+
+    get:
+      tags: [Tenants]
+      summary: List tenants (paginated)
+      operationId: listTenants
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/TenantStatus'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageMeta'
+                  - type: object
+                    properties:
+                      content:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/TenantResponse'
+
+  /api/v1/tenants/{id}:
+    get:
+      tags: [Tenants]
+      summary: Get tenant by ID
+      operationId: getTenant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Tenants]
+      summary: Update tenant
+      operationId: updateTenant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                displayName:
+                  type: string
+                adminEmail:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Tenants]
+      summary: Delete tenant
+      operationId: deleteTenant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/tenants/slug/{slug}:
+    get:
+      tags: [Tenants]
+      summary: Get tenant by slug
+      operationId: getTenantBySlug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/tenants/{id}/activate:
+    post:
+      tags: [Tenants]
+      summary: Activate tenant
+      operationId: activateTenant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Activated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantResponse'
+
+  /api/v1/tenants/{id}/suspend:
+    post:
+      tags: [Tenants]
+      summary: Suspend tenant
+      operationId: suspendTenant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Suspended
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantResponse'
+
+  # ── Subscription Plans ─────────────────────────────────────────────────────
+
+  /api/v1/plans:
+    post:
+      tags: [Plans]
+      summary: Create plan
+      operationId: createPlan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePlanRequest'
+            example:
+              name: Enterprise Annual
+              description: Full feature access
+              tier: ENTERPRISE
+              licenseType: NAMED_USER
+              maxSeats: 100
+              billingCycle: ANNUAL
+              priceInCents: 99900
+              currency: USD
+              features: [feature.advanced-reporting, feature.sso]
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+    get:
+      tags: [Plans]
+      summary: List plans
+      operationId: listPlans
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: active
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageMeta'
+                  - type: object
+                    properties:
+                      content:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/PlanResponse'
+
+  /api/v1/plans/{id}:
+    get:
+      tags: [Plans]
+      summary: Get plan by ID
+      operationId: getPlan
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Plans]
+      summary: Update plan
+      operationId: updatePlan
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePlanRequest'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanResponse'
+
+  /api/v1/plans/tier/{tier}:
+    get:
+      tags: [Plans]
+      summary: Get plans by tier
+      operationId: getPlansByTier
+      parameters:
+        - name: tier
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/PlanTier'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PlanResponse'
+
+  /api/v1/plans/{id}/deactivate:
+    post:
+      tags: [Plans]
+      summary: Deactivate plan
+      operationId: deactivatePlan
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Deactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanResponse'
+
+  # ── Subscriptions ──────────────────────────────────────────────────────────
+
+  /api/v1/subscriptions:
+    post:
+      tags: [Subscriptions]
+      summary: Create subscription
+      operationId: createSubscription
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSubscriptionRequest'
+            example:
+              planId: 550e8400-e29b-41d4-a716-446655440000
+              billingCycle: ANNUAL
+              seatLimit: 50
+              startDate: '2025-01-01'
+              endDate: '2025-12-31'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+
+    get:
+      tags: [Subscriptions]
+      summary: List subscriptions for tenant
+      operationId: listSubscriptions
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageMeta'
+                  - type: object
+                    properties:
+                      content:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/SubscriptionResponse'
+
+  /api/v1/subscriptions/active:
+    get:
+      tags: [Subscriptions]
+      summary: Get active subscription for tenant
+      operationId: getActiveSubscription
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/subscriptions/{id}:
+    get:
+      tags: [Subscriptions]
+      summary: Get subscription by ID
+      operationId: getSubscription
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/subscriptions/{id}/change-plan:
+    post:
+      tags: [Subscriptions]
+      summary: Change subscription plan
+      operationId: changePlan
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePlanRequest'
+      responses:
+        '200':
+          description: Plan changed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+
+  /api/v1/subscriptions/{id}/cancel:
+    post:
+      tags: [Subscriptions]
+      summary: Cancel subscription
+      operationId: cancelSubscription
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelSubscriptionRequest'
+      responses:
+        '200':
+          description: Cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+
+  /api/v1/subscriptions/{id}/suspend:
+    post:
+      tags: [Subscriptions]
+      summary: Suspend subscription
+      operationId: suspendSubscription
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Suspended
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+
+  /api/v1/subscriptions/{id}/renew:
+    post:
+      tags: [Subscriptions]
+      summary: Renew subscription
+      operationId: renewSubscription
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Renewed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+
+  # ── Entitlements ───────────────────────────────────────────────────────────
+
+  /api/v1/entitlements:
+    post:
+      tags: [Entitlements]
+      summary: Create entitlement
+      operationId: createEntitlement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEntitlementRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntitlementResponse'
+
+    get:
+      tags: [Entitlements]
+      summary: List entitlements for tenant
+      operationId: listEntitlements
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageMeta'
+                  - type: object
+                    properties:
+                      content:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/EntitlementResponse'
+
+  /api/v1/entitlements/active:
+    get:
+      tags: [Entitlements]
+      summary: Get active entitlement for tenant
+      operationId: getActiveEntitlement
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntitlementResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/entitlements/{id}:
+    get:
+      tags: [Entitlements]
+      summary: Get entitlement by ID
+      operationId: getEntitlement
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntitlementResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Entitlements]
+      summary: Update entitlement
+      operationId: updateEntitlement
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEntitlementRequest'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntitlementResponse'
+
+  /api/v1/entitlements/{id}/revoke:
+    post:
+      tags: [Entitlements]
+      summary: Revoke entitlement
+      operationId: revokeEntitlement
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Revoked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntitlementResponse'
+
+  /api/v1/entitlements/{id}/suspend:
+    post:
+      tags: [Entitlements]
+      summary: Suspend entitlement
+      operationId: suspendEntitlement
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Suspended
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntitlementResponse'
+
+  # ── Feature Control ────────────────────────────────────────────────────────
+
+  /api/v1/features:
+    post:
+      tags: [Features]
+      summary: Create feature
+      operationId: createFeature
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFeatureRequest'
+            example:
+              featureKey: feature.advanced-reporting
+              name: Advanced Reporting
+              description: Access to advanced analytics dashboards
+              minimumPlanTier: PROFESSIONAL
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureResponse'
+        '409':
+          description: Feature key already exists
+
+    get:
+      tags: [Features]
+      summary: List features
+      operationId: listFeatures
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/FeatureStatus'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageMeta'
+                  - type: object
+                    properties:
+                      content:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/FeatureResponse'
+
+  /api/v1/features/{featureKey}:
+    get:
+      tags: [Features]
+      summary: Get feature by key
+      operationId: getFeature
+      parameters:
+        - name: featureKey
+          in: path
+          required: true
+          schema:
+            type: string
+          example: feature.advanced-reporting
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Features]
+      summary: Update feature
+      operationId: updateFeature
+      parameters:
+        - name: featureKey
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFeatureRequest'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureResponse'
+
+  /api/v1/features/{featureKey}/enable:
+    post:
+      tags: [Features]
+      summary: Enable feature globally
+      operationId: enableFeature
+      parameters:
+        - name: featureKey
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Enabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureResponse'
+
+  /api/v1/features/{featureKey}/disable:
+    post:
+      tags: [Features]
+      summary: Disable feature globally
+      operationId: disableFeature
+      parameters:
+        - name: featureKey
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Disabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureResponse'
+
+  /api/v1/features/{featureKey}/deprecate:
+    post:
+      tags: [Features]
+      summary: Deprecate feature
+      operationId: deprecateFeature
+      parameters:
+        - name: featureKey
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deprecated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureResponse'
+
+  # ── Tenant Features ────────────────────────────────────────────────────────
+
+  /api/v1/tenant-features:
+    get:
+      tags: [Tenant Features]
+      summary: List features for current tenant
+      operationId: listTenantFeatures
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TenantFeatureResponse'
+
+  /api/v1/tenant-features/{featureKey}:
+    get:
+      tags: [Tenant Features]
+      summary: Get tenant feature by key
+      operationId: getTenantFeature
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - name: featureKey
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantFeatureResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Tenant Features]
+      summary: Override feature for current tenant
+      operationId: overrideTenantFeature
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - name: featureKey
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenantFeatureOverrideRequest'
+      responses:
+        '200':
+          description: Override applied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantFeatureResponse'
+
+    delete:
+      tags: [Tenant Features]
+      summary: Remove feature override for current tenant
+      operationId: removeTenantFeatureOverride
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - name: featureKey
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Override removed
+
+  /api/v1/tenant-features/admin/{tenantId}/{featureKey}:
+    get:
+      tags: [Tenant Features]
+      summary: Get feature for a specific tenant (admin)
+      operationId: adminGetTenantFeature
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: featureKey
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantFeatureResponse'
+
+    put:
+      tags: [Tenant Features]
+      summary: Override feature for a specific tenant (admin)
+      operationId: adminOverrideTenantFeature
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: featureKey
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenantFeatureOverrideRequest'
+      responses:
+        '200':
+          description: Override applied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantFeatureResponse'
+
+    delete:
+      tags: [Tenant Features]
+      summary: Remove feature override for a specific tenant (admin)
+      operationId: adminRemoveTenantFeatureOverride
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: featureKey
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Override removed
+
+  # ── Named-User Licenses ────────────────────────────────────────────────────
+
+  /api/v1/named-licenses:
+    post:
+      tags: [Named Licenses]
+      summary: Create license pool
+      operationId: createLicensePool
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNamedLicenseRequest'
+            example:
+              entitlementId: 550e8400-e29b-41d4-a716-446655440001
+              totalSeats: 25
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LicensePoolResponse'
+
+    get:
+      tags: [Named Licenses]
+      summary: List license pools for tenant
+      operationId: listLicensePools
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageMeta'
+                  - type: object
+                    properties:
+                      content:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/LicensePoolResponse'
+
+  /api/v1/named-licenses/{id}:
+    get:
+      tags: [Named Licenses]
+      summary: Get license pool by ID
+      operationId: getLicensePool
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LicensePoolResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/named-licenses/{id}/seats:
+    get:
+      tags: [Named Licenses]
+      summary: List seats in pool
+      operationId: listSeats
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageMeta'
+                  - type: object
+                    properties:
+                      content:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/SeatResponse'
+
+    post:
+      tags: [Named Licenses]
+      summary: Assign seat to user
+      operationId: assignSeat
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignSeatRequest'
+      responses:
+        '201':
+          description: Seat assigned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeatResponse'
+        '409':
+          description: No seats available
+
+  /api/v1/named-licenses/{id}/seats/{userId}:
+    delete:
+      tags: [Named Licenses]
+      summary: Revoke seat from user
+      operationId: revokeSeat
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Seat revoked
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/named-licenses/{id}/transfer:
+    post:
+      tags: [Named Licenses]
+      summary: Transfer seat between users
+      operationId: transferSeat
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferSeatRequest'
+      responses:
+        '200':
+          description: Seat transferred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeatResponse'
+
+  # ── Users ──────────────────────────────────────────────────────────────────
+
+  /api/v1/users:
+    post:
+      tags: [Users]
+      summary: Create user
+      operationId: createUser
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+            example:
+              email: john.doe@acme.com
+              firstName: John
+              lastName: Doe
+              roles: [ROLE_USER]
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '409':
+          description: Email already exists for tenant
+
+    get:
+      tags: [Users]
+      summary: List users for tenant
+      operationId: listUsers
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: active
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageMeta'
+                  - type: object
+                    properties:
+                      content:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/UserResponse'
+
+  /api/v1/users/{id}:
+    get:
+      tags: [Users]
+      summary: Get user by ID
+      operationId: getUser
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Users]
+      summary: Update user
+      operationId: updateUser
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+
+    delete:
+      tags: [Users]
+      summary: Delete user
+      operationId: deleteUser
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Deleted
+
+  /api/v1/users/email/{email}:
+    get:
+      tags: [Users]
+      summary: Get user by email
+      operationId: getUserByEmail
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - name: email
+          in: path
+          required: true
+          schema:
+            type: string
+            format: email
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/users/{id}/roles:
+    put:
+      tags: [Users]
+      summary: Update user roles
+      operationId: updateUserRoles
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRolesRequest'
+      responses:
+        '200':
+          description: Roles updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+
+  /api/v1/users/{id}/deactivate:
+    post:
+      tags: [Users]
+      summary: Deactivate user
+      operationId: deactivateUser
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Deactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+
+  /api/v1/users/{id}/reactivate:
+    post:
+      tags: [Users]
+      summary: Reactivate user
+      operationId: reactivateUser
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Reactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+
+  # ── Sessions ───────────────────────────────────────────────────────────────
+
+  /api/v1/sessions:
+    post:
+      tags: [Sessions]
+      summary: Start a session
+      operationId: startSession
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartSessionRequest'
+            example:
+              userId: 550e8400-e29b-41d4-a716-446655440000
+              clientIp: 192.168.1.100
+              userAgent: Mozilla/5.0
+      responses:
+        '201':
+          description: Session started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '409':
+          description: Concurrent session limit reached
+
+    get:
+      tags: [Sessions]
+      summary: List active sessions for tenant
+      operationId: listSessions
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageMeta'
+                  - type: object
+                    properties:
+                      content:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/SessionResponse'
+
+  /api/v1/sessions/{sessionId}:
+    get:
+      tags: [Sessions]
+      summary: Get session by ID
+      operationId: getSession
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Sessions]
+      summary: End session (user self-logout)
+      operationId: endSession
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Session ended
+
+  /api/v1/sessions/{sessionId}/heartbeat:
+    post:
+      tags: [Sessions]
+      summary: Send session heartbeat
+      operationId: heartbeat
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Heartbeat accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '404':
+          description: Session not found or expired
+
+  /api/v1/sessions/{sessionId}/kill:
+    delete:
+      tags: [Sessions]
+      summary: Kill session (admin force-terminate)
+      operationId: killSession
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Session killed
+
+  # ── Enforcement Engine ─────────────────────────────────────────────────────
+
+  /api/v1/enforcement/check:
+    post:
+      tags: [Enforcement]
+      summary: Check feature access (enforcement decision)
+      description: |
+        Hot-path endpoint. Checks whether a user is entitled to access a given feature.
+        Decisions are made within **200 ms** (SLA) using a Redis cache warmed at startup.
+        Returns `allowed: false` with a `denialReason` on any enforcement failure.
+      operationId: checkAccess
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckAccessRequest'
+            example:
+              userId: 550e8400-e29b-41d4-a716-446655440000
+              featureKey: feature.advanced-reporting
+              sessionId: 660e8400-e29b-41d4-a716-446655440001
+      responses:
+        '200':
+          description: Enforcement decision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckAccessResponse'
+              examples:
+                allowed:
+                  summary: Access granted
+                  value:
+                    allowed: true
+                    decision: ALLOWED
+                    denialReason: null
+                    entitlementId: 770e8400-e29b-41d4-a716-446655440002
+                    responseTimeMs: 3
+                    cacheHit: true
+                denied:
+                  summary: Seat limit exceeded
+                  value:
+                    allowed: false
+                    decision: DENIED
+                    denialReason: SEAT_LIMIT_EXCEEDED
+                    entitlementId: null
+                    responseTimeMs: 12
+                    cacheHit: false
+
+  # ── Usage Metering ─────────────────────────────────────────────────────────
+
+  /api/v1/usage/record:
+    post:
+      tags: [Usage]
+      summary: Record a usage event
+      description: |
+        Fire-and-forget usage event ingestion. Events are published to Kafka
+        (`license.usage.events`) for async processing. Returns 202 Accepted immediately.
+      operationId: recordUsage
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordUsageRequest'
+            example:
+              featureKey: feature.api-access
+              metricName: api_calls
+              quantity: 1.0
+              unit: CALL
+      responses:
+        '202':
+          description: Usage event accepted for processing
+
+  # ── Reporting & Analytics ──────────────────────────────────────────────────
+
+  /api/v1/reports/usage:
+    get:
+      tags: [Reporting]
+      summary: Get usage report for tenant
+      operationId: getUsageReport
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: featureKey
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UsageReportResponse'
+
+  /api/v1/reports/entitlements:
+    get:
+      tags: [Reporting]
+      summary: Get entitlement summary report
+      operationId: getEntitlementReport
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntitlementReportResponse'
+
+  /api/v1/reports/subscriptions:
+    get:
+      tags: [Reporting]
+      summary: Get subscription snapshot report
+      operationId: getSubscriptionReport
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SubscriptionSnapshotResponse'
+
+  /api/v1/reports/export:
+    post:
+      tags: [Reporting]
+      summary: Export report asynchronously
+      operationId: exportReport
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExportRequest'
+            example:
+              reportType: USAGE
+              from: '2025-01-01T00:00:00Z'
+              to: '2025-12-31T23:59:59Z'
+      responses:
+        '202':
+          description: Export queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportResponse'
+
+  # ── Notifications ──────────────────────────────────────────────────────────
+
+  /api/v1/notifications:
+    get:
+      tags: [Notifications]
+      summary: List notifications for tenant
+      operationId: listNotifications
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [PENDING, SENT, FAILED, RETRYING]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageMeta'
+                  - type: object
+                    properties:
+                      content:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/NotificationResponse'
+
+  /api/v1/notifications/{id}:
+    get:
+      tags: [Notifications]
+      summary: Get notification by ID
+      operationId: getNotification
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── Audit ──────────────────────────────────────────────────────────────────
+
+  /api/v1/audit/logs:
+    get:
+      tags: [Audit]
+      summary: Search audit logs
+      operationId: searchAuditLogs
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: actorId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: action
+          in: query
+          schema:
+            type: string
+          example: TENANT_CREATED
+        - name: resourceType
+          in: query
+          schema:
+            type: string
+          example: TENANT
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: outcome
+          in: query
+          schema:
+            type: string
+            enum: [SUCCESS, FAILURE]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageMeta'
+                  - type: object
+                    properties:
+                      content:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/AuditLogResponse'
+
+  /api/v1/audit/logs/{id}:
+    get:
+      tags: [Audit]
+      summary: Get audit log entry by ID
+      operationId: getAuditLog
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLogResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── Scheduler / Workflow ───────────────────────────────────────────────────
+
+  /api/v1/scheduler/subscription-lifecycle:
+    post:
+      tags: [Scheduler]
+      summary: Start subscription lifecycle workflow
+      operationId: startSubscriptionLifecycle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartLifecycleRequest'
+            example:
+              tenantId: 550e8400-e29b-41d4-a716-446655440000
+              subscriptionId: 660e8400-e29b-41d4-a716-446655440001
+              planId: 770e8400-e29b-41d4-a716-446655440002
+              planTier: ENTERPRISE
+              licenseType: NAMED_USER
+              billingCycle: ANNUAL
+              seatLimit: 50
+              startDate: '2025-01-01'
+              endDate: '2025-12-31'
+      responses:
+        '202':
+          description: Lifecycle workflow started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  workflowId:
+                    type: string
+                  runId:
+                    type: string
+
+    delete:
+      tags: [Scheduler]
+      summary: Cancel subscription lifecycle workflow
+      operationId: cancelSubscriptionLifecycle
+      parameters:
+        - name: subscriptionId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Workflow cancelled
+
+  /api/v1/scheduler/subscription-lifecycle/renew:
+    post:
+      tags: [Scheduler]
+      summary: Trigger subscription renewal workflow
+      operationId: triggerRenewal
+      parameters:
+        - name: subscriptionId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '202':
+          description: Renewal workflow triggered
+
+components:
+  responses:
+    BadRequest:
+      description: Invalid request payload
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            timestamp: '2025-01-15T10:30:00Z'
+            status: 400
+            error: Bad Request
+            message: 'Validation failed: slug must match pattern'
+            path: /api/v1/tenants
+            requestId: 123e4567-e89b-12d3-a456-426614174000
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            timestamp: '2025-01-15T10:30:00Z'
+            status: 404
+            error: Not Found
+            message: Resource not found
+            path: /api/v1/tenants/550e8400-e29b-41d4-a716-446655440000
+            requestId: 123e4567-e89b-12d3-a456-426614174000
+
+tags:
+  - name: Tenants
+    description: Tenant lifecycle management
+  - name: Plans
+    description: Subscription plan catalogue
+  - name: Subscriptions
+    description: Tenant subscription management
+  - name: Entitlements
+    description: Feature entitlements per subscription
+  - name: Features
+    description: Global feature flag catalogue
+  - name: Tenant Features
+    description: Per-tenant feature overrides and config
+  - name: Named Licenses
+    description: Named-user license pool and seat management
+  - name: Users
+    description: User management within a tenant
+  - name: Sessions
+    description: Concurrent session tracking
+  - name: Enforcement
+    description: Real-time access enforcement decisions
+  - name: Usage
+    description: Usage metering event ingestion
+  - name: Reporting
+    description: Usage, entitlement, and subscription reports
+  - name: Notifications
+    description: Notification delivery history
+  - name: Audit
+    description: Immutable audit log search
+  - name: Scheduler
+    description: Subscription lifecycle workflow management
