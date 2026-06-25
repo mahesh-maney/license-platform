@@ -1,9 +1,12 @@
 package com.modus.license.session.service;
 
 import com.modus.license.core.context.TenantContext;
+import com.modus.license.core.exception.ErrorCode;
+import com.modus.license.core.exception.ModusException;
 import com.modus.license.core.exception.ResourceNotFoundException;
 import com.modus.license.session.api.dto.SessionResponse;
 import com.modus.license.session.api.dto.StartSessionRequest;
+import com.modus.license.session.config.SessionProperties;
 import com.modus.license.session.domain.event.SessionEventPublisher;
 import com.modus.license.session.domain.model.SessionRecord;
 import com.modus.license.session.domain.repository.SessionRepository;
@@ -23,33 +26,48 @@ public class SessionService {
 
     private final SessionRepository repository;
     private final SessionEventPublisher eventPublisher;
+    private final SessionProperties props;
 
-    public SessionService(SessionRepository repository, SessionEventPublisher eventPublisher) {
+    public SessionService(SessionRepository repository,
+                          SessionEventPublisher eventPublisher,
+                          SessionProperties props) {
         this.repository     = repository;
         this.eventPublisher = eventPublisher;
+        this.props          = props;
     }
 
     /** Start a new session for the authenticated user. */
     public Mono<SessionResponse> startSession(StartSessionRequest request, TenantContext ctx) {
-        String sessionId = UUID.randomUUID().toString();
-        String tenantId  = ctx.tenantId().value().toString();
-        Instant now      = Instant.now();
+        String tenantId = ctx.tenantId().value().toString();
 
-        SessionRecord record = new SessionRecord(
-                sessionId,
-                tenantId,
-                request.userId().toString(),
-                request.licenseId() != null ? request.licenseId().toString() : null,
-                request.clientIp(),
-                request.userAgent(),
-                now,
-                now
-        );
+        return repository.getCount(tenantId)
+                .flatMap(currentCount -> {
+                    if (currentCount >= props.maxConcurrentDefault()) {
+                        return Mono.error(new ModusException(
+                                ErrorCode.SESSION_LIMIT_EXCEEDED,
+                                "Concurrent session limit of " + props.maxConcurrentDefault()
+                                        + " reached for tenant: " + tenantId));
+                    }
 
-        return repository.save(record)
-                .flatMap(saved -> repository.incrementCount(tenantId).thenReturn(saved))
-                .doOnSuccess(eventPublisher::publishStarted)
-                .map(this::toResponse);
+                    String sessionId = UUID.randomUUID().toString();
+                    Instant now      = Instant.now();
+
+                    SessionRecord record = new SessionRecord(
+                            sessionId,
+                            tenantId,
+                            request.userId().toString(),
+                            request.licenseId() != null ? request.licenseId().toString() : null,
+                            request.clientIp(),
+                            request.userAgent(),
+                            now,
+                            now
+                    );
+
+                    return repository.save(record)
+                            .flatMap(saved -> repository.incrementCount(tenantId).thenReturn(saved))
+                            .doOnSuccess(eventPublisher::publishStarted)
+                            .map(this::toResponse);
+                });
     }
 
     /** Retrieve a session by ID. */

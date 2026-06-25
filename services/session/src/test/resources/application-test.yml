@@ -25,7 +25,9 @@ session:
   ttl-seconds:                3600
   heartbeat-interval-seconds: 60
   max-concurrent-default:     50
-  cleanup-interval-seconds:   30
+  cleanup-interval-seconds:   86400   # won't tick during test runs
+  cleanup:
+    enabled: false                    # disable background scheduler in tests
 
 logging:
   level:
