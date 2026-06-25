@@ -1,4 +1,4 @@
-# Modus License Platform
+# License Platform
 
 A multi-tenant software licensing platform built on Spring Boot 3.3 and Java 21. It handles tenant onboarding, subscription and plan management, feature-based entitlements, named-user seat allocation, concurrent session enforcement, usage metering, audit, scheduling, notifications, and analytics — all as independent microservices communicating over Kafka (Avro) and gRPC.
 
@@ -81,7 +81,7 @@ A multi-tenant software licensing platform built on Spring Boot 3.3 and Java 21.
 ## Repository Layout
 
 ```
-modus-license-platform/
+license-platform/
 ├── platform/                        # Shared library modules
 │   ├── platform-core/               # Domain primitives, error types, web wrappers
 │   ├── platform-events/             # Avro schemas — single source of truth for all Kafka events
@@ -169,15 +169,15 @@ Routes:
 
 ### tenant-management — Port 8081
 
-Manages tenants (create, update, suspend, activate, delete). Publishes `TenantEvent` to `modus.tenant.events` on every state change. Keycloak realm provisioning is triggered on tenant activation.
+Manages tenants (create, update, suspend, activate, delete). Publishes `TenantEvent` to `license.tenant.events` on every state change. Keycloak realm provisioning is triggered on tenant activation.
 
 ### subscription-plan — Port 8082
 
-Manages plan definitions (tiers, features, pricing), SKUs, and tenant subscriptions. On subscription activation, calls `scheduler-workflow` REST API to start the `SubscriptionLifecycleWorkflow` in Temporal. Publishes `SubscriptionEvent` to `modus.subscription.events`.
+Manages plan definitions (tiers, features, pricing), SKUs, and tenant subscriptions. On subscription activation, calls `scheduler-workflow` REST API to start the `SubscriptionLifecycleWorkflow` in Temporal. Publishes `SubscriptionEvent` to `license.subscription.events`.
 
 ### entitlement — Port 8083
 
-Maintains entitlement records (which features a tenant is licensed for, seat limits, validity dates). Consumes `SubscriptionEvent` to create or revoke entitlements automatically. Publishes `EntitlementEvent` to `modus.entitlement.events`.
+Maintains entitlement records (which features a tenant is licensed for, seat limits, validity dates). Consumes `SubscriptionEvent` to create or revoke entitlements automatically. Publishes `EntitlementEvent` to `license.entitlement.events`.
 
 ### feature-control — Port 8084
 
@@ -189,11 +189,11 @@ Allocates named-user seats within an entitlement. Tracks seat assignments per us
 
 ### user-management — Port 8086
 
-Tenant-scoped user CRUD. Publishes `UserEvent` to `modus.user.events`. Enforces user count against entitlement seat limits.
+Tenant-scoped user CRUD. Publishes `UserEvent` to `license.user.events`. Enforces user count against entitlement seat limits.
 
 ### session — Port 8087 · gRPC 9097
 
-Manages concurrent user sessions stored in Redis. Enforces per-tenant concurrent session limits from the entitlement. Exposes a gRPC API consumed by enforcement-engine on the hot path. Publishes `SessionEvent` to `modus.session.events`.
+Manages concurrent user sessions stored in Redis. Enforces per-tenant concurrent session limits from the entitlement. Exposes a gRPC API consumed by enforcement-engine on the hot path. Publishes `SessionEvent` to `license.session.events`.
 
 ### enforcement-engine — Port 8088 · gRPC 9098
 
@@ -203,11 +203,11 @@ The license enforcement decision engine. Sub-200 ms SLA enforced via:
 2. PostgreSQL fallback on cache miss (`ENFORCEMENT_CACHE_MISS_FALLBACK_DB=true`)
 3. gRPC call to session service for concurrent-session check
 
-Decision result published to `modus.enforcement.decisions`. Consumes `EntitlementEvent` to warm and invalidate the cache.
+Decision result published to `license.enforcement.decisions`. Consumes `EntitlementEvent` to warm and invalidate the cache.
 
 ### usage-metering — Port 8089
 
-Consumes `SessionEvent` and `EnforcementDecision` events. Aggregates usage into time-windowed metrics and publishes `UsageEvent` to `modus.usage.events`.
+Consumes `SessionEvent` and `EnforcementDecision` events. Aggregates usage into time-windowed metrics and publishes `UsageEvent` to `license.usage.events`.
 
 ### reporting-analytics — Port 8090
 
@@ -262,18 +262,18 @@ All events use Avro serialisation with Confluent Schema Registry. Schemas are de
 
 | Topic | Key | Publisher(s) | Consumer(s) |
 |---|---|---|---|
-| `modus.tenant.events` | tenantId | tenant-management | notification, reporting-analytics, audit |
-| `modus.subscription.events` | subscriptionId | subscription-plan, scheduler-workflow | entitlement, notification, reporting-analytics, audit |
-| `modus.entitlement.events` | entitlementId | entitlement | enforcement-engine (cache warm), reporting-analytics, audit |
-| `modus.feature.events` | featureId | feature-control | audit |
-| `modus.session.events` | sessionId | session | usage-metering, audit |
-| `modus.enforcement.decisions` | tenantId | enforcement-engine | usage-metering, audit |
-| `modus.named-license.events` | licenseId | named-user-license | audit |
-| `modus.user.events` | userId | user-management | audit |
-| `modus.usage.events` | tenantId | usage-metering | reporting-analytics, audit |
-| `modus.audit.events` | tenantId | all services (via platform-audit) | audit |
-| `modus.notification.events` | tenantId | notification | audit |
-| `modus.billing.events` | tenantId | subscription-plan | (future: billing service) |
+| `license.tenant.events` | tenantId | tenant-management | notification, reporting-analytics, audit |
+| `license.subscription.events` | subscriptionId | subscription-plan, scheduler-workflow | entitlement, notification, reporting-analytics, audit |
+| `license.entitlement.events` | entitlementId | entitlement | enforcement-engine (cache warm), reporting-analytics, audit |
+| `license.feature.events` | featureId | feature-control | audit |
+| `license.session.events` | sessionId | session | usage-metering, audit |
+| `license.enforcement.decisions` | tenantId | enforcement-engine | usage-metering, audit |
+| `license.named-license.events` | licenseId | named-user-license | audit |
+| `license.user.events` | userId | user-management | audit |
+| `license.usage.events` | tenantId | usage-metering | reporting-analytics, audit |
+| `license.audit.events` | tenantId | all services (via platform-audit) | audit |
+| `license.notification.events` | tenantId | notification | audit |
+| `license.billing.events` | tenantId | subscription-plan | (future: billing service) |
 
 Default: 12 partitions, replication factor 3 (1 for local dev).
 
@@ -316,7 +316,7 @@ ANY  /fallback/**
 
 ```bash
 git clone <repo-url>
-cd modus-license-platform
+cd license-platform
 cp .env.example .env
 # Edit .env if needed — defaults work for local dev
 ```
@@ -339,7 +339,7 @@ docker compose ps
 
 On first run only. Either place your realm export JSON at `infra/keycloak/` (Keycloak imports `data/import` on `start-dev`) or use the admin console at `http://localhost:8180` (admin / admin).
 
-Create a realm named `modus`, a client `modus-license-api`, and a test user with the `TENANT_ADMIN` role and a `tenant_id` claim.
+Create a realm named `license`, a client `license-api`, and a test user with the `TENANT_ADMIN` role and a `tenant_id` claim.
 
 ### 4. Start a service
 
@@ -441,7 +441,7 @@ Images are built with [Jib](https://github.com/GoogleContainerTools/jib) — no 
 ./gradlew :services:api-gateway:jibDockerBuild
 ```
 
-The registry is controlled by `CONTAINER_REGISTRY` (default: `modusacr.azurecr.io`).
+The registry is controlled by `CONTAINER_REGISTRY` (default: `myacr.azurecr.io`).
 The image tag is controlled by `APP_VERSION` (default: `1.0.0-SNAPSHOT`).
 
 ```bash
@@ -534,7 +534,7 @@ Azure App Configuration loads all properties centrally. Secrets (passwords, keys
 ```
 1. ./gradlew test
 2. ./gradlew jib  (push to ACR with APP_VERSION=${{ github.sha }})
-3. helm upgrade --install modus-license ./infra/helm \
+3. helm upgrade --install license-platform ./infra/helm \
      --set image.tag=${{ github.sha }} \
      --set environment=prod
 ```
