@@ -433,6 +433,7 @@ services:
       KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       IAM_ISSUER_URI:           http://keycloak:8080/realms/modus
       IAM_JWK_SET_URI:          http://keycloak:8080/realms/modus/protocol/openid-connect/certs
+      TRACING_ENDPOINT:          http://zipkin:9411/api/v2/spans
     ports:
       - "${PORT_TENANT_MANAGEMENT:-8081}:8081"
     networks: [modus-net]
@@ -460,6 +461,7 @@ services:
       KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       IAM_ISSUER_URI:            http://keycloak:8080/realms/modus
       IAM_JWK_SET_URI:           http://keycloak:8080/realms/modus/protocol/openid-connect/certs
+      TRACING_ENDPOINT:          http://zipkin:9411/api/v2/spans
       SCHEDULER_WORKFLOW_HOST:   modus-scheduler-workflow
     ports:
       - "${PORT_SUBSCRIPTION_PLAN:-8082}:8082"
@@ -488,6 +490,7 @@ services:
       KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       IAM_ISSUER_URI:            http://keycloak:8080/realms/modus
       IAM_JWK_SET_URI:           http://keycloak:8080/realms/modus/protocol/openid-connect/certs
+      TRACING_ENDPOINT:          http://zipkin:9411/api/v2/spans
     ports:
       - "${PORT_ENTITLEMENT:-8083}:8083"
     networks: [modus-net]
@@ -515,6 +518,7 @@ services:
       KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       IAM_ISSUER_URI:            http://keycloak:8080/realms/modus
       IAM_JWK_SET_URI:           http://keycloak:8080/realms/modus/protocol/openid-connect/certs
+      TRACING_ENDPOINT:          http://zipkin:9411/api/v2/spans
     ports:
       - "${PORT_FEATURE_CONTROL:-8084}:8084"
     networks: [modus-net]
@@ -542,6 +546,7 @@ services:
       KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       IAM_ISSUER_URI:            http://keycloak:8080/realms/modus
       IAM_JWK_SET_URI:           http://keycloak:8080/realms/modus/protocol/openid-connect/certs
+      TRACING_ENDPOINT:          http://zipkin:9411/api/v2/spans
     ports:
       - "${PORT_NAMED_USER_LICENSE:-8085}:8085"
     networks: [modus-net]
@@ -569,6 +574,7 @@ services:
       KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       IAM_ISSUER_URI:            http://keycloak:8080/realms/modus
       IAM_JWK_SET_URI:           http://keycloak:8080/realms/modus/protocol/openid-connect/certs
+      TRACING_ENDPOINT:          http://zipkin:9411/api/v2/spans
     ports:
       - "${PORT_USER_MANAGEMENT:-8086}:8086"
     networks: [modus-net]
@@ -596,6 +602,7 @@ services:
       KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       IAM_ISSUER_URI:            http://keycloak:8080/realms/modus
       IAM_JWK_SET_URI:           http://keycloak:8080/realms/modus/protocol/openid-connect/certs
+      TRACING_ENDPOINT:          http://zipkin:9411/api/v2/spans
     ports:
       - "${PORT_SESSION:-8087}:8087"
       - "${GRPC_SESSION_PORT:-9097}:9097"
@@ -626,6 +633,7 @@ services:
       KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       IAM_ISSUER_URI:            http://keycloak:8080/realms/modus
       IAM_JWK_SET_URI:           http://keycloak:8080/realms/modus/protocol/openid-connect/certs
+      TRACING_ENDPOINT:          http://zipkin:9411/api/v2/spans
       GRPC_SESSION_HOST:         modus-session
     ports:
       - "${PORT_ENFORCEMENT_ENGINE:-8088}:8088"
@@ -651,6 +659,7 @@ services:
       KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       IAM_ISSUER_URI:            http://keycloak:8080/realms/modus
       IAM_JWK_SET_URI:           http://keycloak:8080/realms/modus/protocol/openid-connect/certs
+      TRACING_ENDPOINT:          http://zipkin:9411/api/v2/spans
     ports:
       - "${PORT_USAGE_METERING:-8089}:8089"
     networks: [modus-net]
@@ -678,6 +687,7 @@ services:
       KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       IAM_ISSUER_URI:            http://keycloak:8080/realms/modus
       IAM_JWK_SET_URI:           http://keycloak:8080/realms/modus/protocol/openid-connect/certs
+      TRACING_ENDPOINT:          http://zipkin:9411/api/v2/spans
     ports:
       - "${PORT_REPORTING_ANALYTICS:-8090}:8090"
     networks: [modus-net]
@@ -705,6 +715,7 @@ services:
       KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       IAM_ISSUER_URI:            http://keycloak:8080/realms/modus
       IAM_JWK_SET_URI:           http://keycloak:8080/realms/modus/protocol/openid-connect/certs
+      TRACING_ENDPOINT:          http://zipkin:9411/api/v2/spans
       NOTIFICATION_EMAIL_HOST:   ${NOTIFICATION_EMAIL_HOST:-smtp.office365.com}
       NOTIFICATION_EMAIL_USERNAME: ${NOTIFICATION_EMAIL_USERNAME:-noreply@modus.com}
       NOTIFICATION_EMAIL_PASSWORD: ${NOTIFICATION_EMAIL_PASSWORD:-changeme}
@@ -735,6 +746,7 @@ services:
       KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       IAM_ISSUER_URI:            http://keycloak:8080/realms/modus
       IAM_JWK_SET_URI:           http://keycloak:8080/realms/modus/protocol/openid-connect/certs
+      TRACING_ENDPOINT:          http://zipkin:9411/api/v2/spans
     ports:
       - "${PORT_AUDIT:-8092}:8092"
     networks: [modus-net]
@@ -760,6 +772,7 @@ services:
       KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       IAM_ISSUER_URI:            http://keycloak:8080/realms/modus
       IAM_JWK_SET_URI:           http://keycloak:8080/realms/modus/protocol/openid-connect/certs
+      TRACING_ENDPOINT:          http://zipkin:9411/api/v2/spans
       TEMPORAL_SERVICE_ADDRESS:  temporal:7233
       SUBSCRIPTION_PLAN_HOST:    modus-subscription-plan
       ENTITLEMENT_HOST:          modus-entitlement
@@ -789,6 +802,7 @@ services:
       REDIS_PASSWORD:              ${REDIS_PASSWORD:-changeme}
       IAM_ISSUER_URI:              http://keycloak:8080/realms/modus
       IAM_JWK_SET_URI:             http://keycloak:8080/realms/modus/protocol/openid-connect/certs
+      TRACING_ENDPOINT:          http://zipkin:9411/api/v2/spans
       TENANT_MANAGEMENT_HOST:      modus-tenant-management
       SUBSCRIPTION_PLAN_HOST:      modus-subscription-plan
       ENTITLEMENT_HOST:            modus-entitlement
@@ -796,6 +810,7 @@ services:
       NAMED_USER_LICENSE_HOST:     modus-named-user-license
       USER_MANAGEMENT_HOST:        modus-user-management
       ENFORCEMENT_ENGINE_HOST:     modus-enforcement-engine
+      SESSION_HOST:                modus-session
       USAGE_METERING_HOST:         modus-usage-metering
       REPORTING_ANALYTICS_HOST:    modus-reporting-analytics
       NOTIFICATION_HOST:           modus-notification

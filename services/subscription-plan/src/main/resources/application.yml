@@ -41,8 +41,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri:  ${IAM_ISSUER_URI:http://localhost:8080/realms/modus}
-          jwk-set-uri: ${IAM_JWK_SET_URI:http://localhost:8080/realms/modus/protocol/openid-connect/certs}
+          issuer-uri:  ${IAM_ISSUER_URI:http://localhost:8180/realms/modus}
+          jwk-set-uri: ${IAM_JWK_SET_URI:http://localhost:8180/realms/modus/protocol/openid-connect/certs}
 
 kafka:
   topics:
@@ -62,6 +62,9 @@ management:
     enabled:     ${TRACING_ENABLED:true}
     sampling:
       probability: ${TRACING_SAMPLE_RATE:1.0}
+  zipkin:
+    tracing:
+      endpoint: ${TRACING_ENDPOINT:http://localhost:9411/api/v2/spans}
 
 logging:
   level:
