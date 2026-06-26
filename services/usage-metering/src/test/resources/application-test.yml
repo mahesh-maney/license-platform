@@ -1,23 +1,37 @@
 spring:
+  config:
+    import: ""
+
   kafka:
-    bootstrap-servers: ${spring.embedded.kafka.brokers:localhost:9092}
-    consumer:
-      group-id:           modus-usage-metering-test
-      auto-offset-reset:  earliest
-      enable-auto-commit: false
-      key-deserializer:   org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
-    producer:
-      key-serializer:   org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+    bootstrap-servers: ${TEST_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     properties:
       schema.registry.url: mock://test
+    consumer:
+      auto-offset-reset: earliest
+      group-id: usage-metering-test
+      properties:
+        specific.avro.reader: true
+
   security:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:9999/test-realm
+          issuer-uri:  ${TEST_JWT_ISSUER_URI:http://localhost:9090/realms/modus}
+          jwk-set-uri: ${TEST_JWK_SET_URI:http://localhost:9090/realms/modus/protocol/openid-connect/certs}
+
+platform:
+  jwt:
+    claim-tenant-id: tenant_id
+    claim-roles:     roles
+    claim-user-id:   sub
+  observability:
+    mdc-enabled: false
 
 logging:
   level:
+    root: WARN
     com.modus.license: DEBUG
+
+management:
+  tracing:
+    enabled: false
