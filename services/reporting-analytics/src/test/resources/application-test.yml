@@ -1,32 +1,53 @@
 spring:
+  config:
+    import: ""
+
   datasource:
-    url:               jdbc:tc:postgresql:15:///modus_reporting_test
-    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    url:      ${TEST_DATASOURCE_URL:jdbc:tc:postgresql:16-alpine:///modus_reporting_test}
+    username: test
+    password: test
+
   jpa:
     hibernate:
       ddl-auto: none
-    show-sql: true
+
   flyway:
     enabled: true
-    baseline-on-migrate: true
+    baseline-on-migrate: false
+
   kafka:
-    bootstrap-servers: ${spring.embedded.kafka.brokers:localhost:9092}
-    consumer:
-      group-id:           modus-reporting-test
-      auto-offset-reset:  earliest
-      enable-auto-commit: false
-      key-deserializer:   org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
+    bootstrap-servers: ${TEST_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     properties:
       schema.registry.url: mock://test
+    consumer:
+      auto-offset-reset: earliest
+      group-id: reporting-analytics-test
+      properties:
+        specific.avro.reader: true
+
   security:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:9999/test-realm
+          issuer-uri:  ${TEST_JWT_ISSUER_URI:http://localhost:9090/realms/modus}
+          jwk-set-uri: ${TEST_JWK_SET_URI:http://localhost:9090/realms/modus/protocol/openid-connect/certs}
 
-# Azure Blob export is not active in tests (BlobServiceClient bean absent)
+platform:
+  jwt:
+    claim-tenant-id: tenant_id
+    claim-roles:     roles
+    claim-user-id:   sub
+  observability:
+    mdc-enabled: false
+
+# Azure Blob export is absent in tests (no BlobServiceClient bean → ReportExportService skipped)
 
 logging:
   level:
+    root: WARN
     com.modus.license: DEBUG
+    org.flywaydb: INFO
+
+management:
+  tracing:
+    enabled: false
