@@ -1,19 +1,21 @@
 spring:
+  config:
+    import: ""
+
   kafka:
-    bootstrap-servers: ${spring.embedded.kafka.brokers:localhost:9092}
+    bootstrap-servers: ${TEST_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     properties:
       schema.registry.url: mock://test
     producer:
       key-serializer:   org.apache.kafka.common.serialization.StringSerializer
       value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+
   security:
     oauth2:
       resourceserver:
         jwt:
           issuer-uri: http://localhost:9999/test-realm
 
-# Disable Temporal — integration tests require a running Temporal server or the
-# io.temporal:temporal-testing module. Unit tests mock workflow/activity directly.
 temporal:
   enabled: false
   service-address: localhost:7233
@@ -24,8 +26,8 @@ temporal:
     max-concurrent-workflows:  5
 
 scheduler:
-  renewal-sweep-cron: 0 0 * * *
-  expiry-sweep-cron:  0 * * * *
+  renewal-sweep-cron: "0 0 * * *"
+  expiry-sweep-cron:  "0 * * * *"
   grace-period-days:  7
 
 services:
@@ -35,6 +37,16 @@ services:
     url: http://localhost:8083
   notification:
     url: http://localhost:8091
+
+platform:
+  jwt:
+    claim-tenant-id: tenant_id
+    claim-roles:     roles
+    claim-user-id:   sub
+
+management:
+  tracing:
+    enabled: false
 
 logging:
   level:
