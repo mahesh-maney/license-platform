@@ -20,6 +20,7 @@ dependencies {
     testImplementation project(':platform:platform-test')
     testImplementation libs.testcontainers.postgresql
     testImplementation libs.testcontainers.kafka
+    testImplementation libs.spring.security.test
 }
 
 jib {

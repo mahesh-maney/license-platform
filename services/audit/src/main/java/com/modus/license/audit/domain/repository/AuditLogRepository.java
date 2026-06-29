@@ -23,8 +23,8 @@ public interface AuditLogRepository extends JpaRepository<AuditLogEntity, UUID> 
               AND (:resourceType  IS NULL OR a.resourceType  = :resourceType)
               AND (:resourceId    IS NULL OR a.resourceId    = :resourceId)
               AND (:outcome       IS NULL OR a.outcome       = :outcome)
-              AND (:from          IS NULL OR a.recordedAt   >= :from)
-              AND (:to            IS NULL OR a.recordedAt   <= :to)
+              AND (cast(:from as java.time.Instant) IS NULL OR a.recordedAt >= :from)
+              AND (cast(:to   as java.time.Instant) IS NULL OR a.recordedAt <= :to)
             ORDER BY a.recordedAt DESC
             """)
     Page<AuditLogEntity> search(

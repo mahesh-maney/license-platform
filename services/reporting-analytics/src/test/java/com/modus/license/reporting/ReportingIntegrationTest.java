@@ -92,7 +92,7 @@ class ReportingIntegrationTest {
         mockMvc.perform(get("/api/v1/reports/usage")
                         .with(tenantAdmin()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items").isArray());
+                .andExpect(jsonPath("$.data.content").isArray());
     }
 
     @Test
@@ -110,7 +110,7 @@ class ReportingIntegrationTest {
                         .param("metricName", "API_CALLS")
                         .with(tenantAdmin()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items").isArray());
+                .andExpect(jsonPath("$.data.content").isArray());
     }
 
     // ── GET /api/v1/reports/entitlements ─────────────────────────────────────
@@ -121,7 +121,7 @@ class ReportingIntegrationTest {
         mockMvc.perform(get("/api/v1/reports/entitlements")
                         .with(tenantAdmin()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items").isArray());
+                .andExpect(jsonPath("$.data.content").isArray());
     }
 
     // ── GET /api/v1/reports/subscriptions ────────────────────────────────────
@@ -132,7 +132,7 @@ class ReportingIntegrationTest {
         mockMvc.perform(get("/api/v1/reports/subscriptions")
                         .with(tenantAdmin()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items").isArray());
+                .andExpect(jsonPath("$.data.content").isArray());
     }
 
     // ── POST /api/v1/reports/export ───────────────────────────────────────────

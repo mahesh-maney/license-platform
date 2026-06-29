@@ -184,7 +184,7 @@ class NamedLicenseIntegrationTest {
         mockMvc.perform(get("/api/v1/named-licenses")
                         .with(platformAdmin()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items").isArray());
+                .andExpect(jsonPath("$.data.content").isArray());
     }
 
     // ── POST /api/v1/named-licenses/{id}/seats ────────────────────────────────
@@ -303,6 +303,6 @@ class NamedLicenseIntegrationTest {
         mockMvc.perform(get("/api/v1/named-licenses/{id}/seats", licenseId)
                         .with(platformAdmin()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items").isArray());
+                .andExpect(jsonPath("$.data.content").isArray());
     }
 }

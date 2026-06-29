@@ -1,35 +1,56 @@
 spring:
+  config:
+    import: ""
+
   datasource:
-    url:               jdbc:tc:postgresql:15:///modus_audit_test
-    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    url:      ${TEST_DATASOURCE_URL:jdbc:tc:postgresql:16-alpine:///modus_audit_test}
+    username: test
+    password: test
+
   jpa:
     hibernate:
       ddl-auto: none
-    show-sql: true
+
   flyway:
     enabled: true
-    baseline-on-migrate: true
+    baseline-on-migrate: false
+
   kafka:
-    bootstrap-servers: ${spring.embedded.kafka.brokers:localhost:9092}
-    consumer:
-      group-id:           modus-audit-test
-      auto-offset-reset:  earliest
-      enable-auto-commit: false
-      key-deserializer:   org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
+    bootstrap-servers: ${TEST_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     properties:
       schema.registry.url: mock://test
+    consumer:
+      auto-offset-reset: earliest
+      group-id: audit-test
+      properties:
+        specific.avro.reader: true
+
   security:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:9999/test-realm
+          issuer-uri:  ${TEST_JWT_ISSUER_URI:http://localhost:9090/realms/modus}
+          jwk-set-uri: ${TEST_JWK_SET_URI:http://localhost:9090/realms/modus/protocol/openid-connect/certs}
+
+platform:
+  jwt:
+    claim-tenant-id: tenant_id
+    claim-roles:     roles
+    claim-user-id:   sub
+  observability:
+    mdc-enabled: false
 
 audit:
-  hash-algorithm:  SHA-256
-  worm-enabled:    false
-  retention-days:  2555
+  hash-algorithm: SHA-256
+  worm-enabled:   false   # keeps AuditArchiveService out of context (ConditionalOnProperty)
+  retention-days: 2555
 
 logging:
   level:
+    root: WARN
     com.modus.license: DEBUG
+    org.flywaydb: INFO
+
+management:
+  tracing:
+    enabled: false

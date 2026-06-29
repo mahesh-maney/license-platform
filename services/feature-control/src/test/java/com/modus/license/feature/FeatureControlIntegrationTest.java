@@ -192,7 +192,7 @@ class FeatureControlIntegrationTest {
         mockMvc.perform(get("/api/v1/features")
                         .with(platformAdmin()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items").isArray());
+                .andExpect(jsonPath("$.data.content").isArray());
     }
 
     @Test
@@ -203,7 +203,7 @@ class FeatureControlIntegrationTest {
         mockMvc.perform(get("/api/v1/features").param("status", "ENABLED")
                         .with(platformAdmin()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items").isArray());
+                .andExpect(jsonPath("$.data.content").isArray());
     }
 
     // ── PATCH /api/v1/features/{featureKey} ───────────────────────────────────

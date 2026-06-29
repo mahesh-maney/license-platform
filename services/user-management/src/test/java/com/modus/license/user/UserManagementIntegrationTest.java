@@ -204,7 +204,7 @@ class UserManagementIntegrationTest {
         mockMvc.perform(get("/api/v1/users")
                         .with(tenantAdmin()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items").isArray());
+                .andExpect(jsonPath("$.data.content").isArray());
     }
 
     @Test
@@ -215,7 +215,7 @@ class UserManagementIntegrationTest {
         mockMvc.perform(get("/api/v1/users").param("status", "ACTIVE")
                         .with(tenantAdmin()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items").isArray());
+                .andExpect(jsonPath("$.data.content").isArray());
     }
 
     // ── PUT /api/v1/users/{id} ────────────────────────────────────────────────

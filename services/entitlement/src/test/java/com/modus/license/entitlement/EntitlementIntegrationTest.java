@@ -199,7 +199,7 @@ class EntitlementIntegrationTest {
         mockMvc.perform(get("/api/v1/entitlements")
                         .with(platformAdmin()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items").isArray());
+                .andExpect(jsonPath("$.data.content").isArray());
     }
 
     // ── GET /api/v1/entitlements/active ───────────────────────────────────────

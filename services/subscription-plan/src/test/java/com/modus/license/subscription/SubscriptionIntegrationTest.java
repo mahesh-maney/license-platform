@@ -211,7 +211,7 @@ class SubscriptionIntegrationTest {
         mockMvc.perform(get("/api/v1/plans")
                         .with(platformAdmin()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items").isArray());
+                .andExpect(jsonPath("$.data.content").isArray());
     }
 
     @Test
@@ -222,7 +222,7 @@ class SubscriptionIntegrationTest {
         mockMvc.perform(get("/api/v1/plans").param("activeOnly", "true")
                         .with(platformAdmin()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items").isArray());
+                .andExpect(jsonPath("$.data.content").isArray());
     }
 
     // ── GET /api/v1/plans/by-tier/{tier} ──────────────────────────────────────

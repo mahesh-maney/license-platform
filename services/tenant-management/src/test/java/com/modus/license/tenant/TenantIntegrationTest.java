@@ -209,7 +209,7 @@ class TenantIntegrationTest {
         mockMvc.perform(get("/api/v1/tenants")
                         .with(platformAdmin()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items").isArray());
+                .andExpect(jsonPath("$.data.content").isArray());
     }
 
     @Test
@@ -220,7 +220,7 @@ class TenantIntegrationTest {
         mockMvc.perform(get("/api/v1/tenants").param("status", "TRIAL")
                         .with(platformAdmin()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items").isArray());
+                .andExpect(jsonPath("$.data.content").isArray());
     }
 
     // ── PUT /api/v1/tenants/{id} ──────────────────────────────────────────────
