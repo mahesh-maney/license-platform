@@ -27,8 +27,8 @@ public class WebhookDispatchService {
     public WebhookDispatchService(RestTemplateBuilder builder, NotificationProperties props) {
         this.props = props;
         this.restTemplate = builder
-                .connectTimeout(Duration.ofMillis(props.webhook().timeoutMs()))
-                .readTimeout(Duration.ofMillis(props.webhook().timeoutMs()))
+                .setConnectTimeout(Duration.ofMillis(props.webhook().timeoutMs()))
+                .setReadTimeout(Duration.ofMillis(props.webhook().timeoutMs()))
                 .build();
     }
 
