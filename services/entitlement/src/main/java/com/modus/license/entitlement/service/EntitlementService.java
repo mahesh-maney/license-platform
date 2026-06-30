@@ -134,6 +134,7 @@ public class EntitlementService {
         entity.setStatus(EntitlementStatus.REVOKED);
         entity = repository.save(entity);
 
+        log.info("Revoked entitlement: id={} tenantId={} previousStatus={}", entity.getId(), entity.getTenantId(), previousStatus);
         cacheService.evict(entity.getTenantId());
         eventPublisher.publishRevoked(entity, previousStatus);
         return mapper.toResponse(entity);
@@ -149,6 +150,7 @@ public class EntitlementService {
         entity.setStatus(EntitlementStatus.SUSPENDED);
         entity = repository.save(entity);
 
+        log.info("Suspended entitlement: id={} tenantId={} previousStatus={}", entity.getId(), entity.getTenantId(), previousStatus);
         cacheService.evict(entity.getTenantId());
         eventPublisher.publishSuspended(entity, previousStatus);
         return mapper.toResponse(entity);
@@ -191,6 +193,7 @@ public class EntitlementService {
             entity.setLicenseType(newLicenseType);
             entity.setSeatLimit(newSeatLimit);
             entity = repository.save(entity);
+            log.info("Updated entitlement plan: id={} subscriptionId={} newPlanId={}", entity.getId(), subscriptionId, newPlanId);
             cacheService.cache(entity.getTenantId(), mapper.toResponse(entity));
             eventPublisher.publishUpdated(entity);
         });
@@ -202,6 +205,7 @@ public class EntitlementService {
             String previousStatus = entity.getStatus().name();
             entity.setStatus(newStatus);
             entity = repository.save(entity);
+            log.info("Entitlement status changed: id={} subscriptionId={} {} -> {}", entity.getId(), subscriptionId, previousStatus, newStatus);
             cacheService.evict(entity.getTenantId());
 
             switch (newStatus) {
@@ -222,6 +226,7 @@ public class EntitlementService {
                     entity = repository.save(entity);
                     eventPublisher.publishSuspended(entity, EntitlementStatus.ACTIVE.name());
                 });
+        log.info("Suspended all active entitlements for tenant: tenantId={}", tenantId);
         cacheService.evict(tenantId);
     }
 
@@ -234,6 +239,7 @@ public class EntitlementService {
                     eventPublisher.publishRenewed(entity);
                     cacheService.cache(tenantId, mapper.toResponse(entity));
                 });
+        log.info("Re-activated suspended entitlements for tenant: tenantId={}", tenantId);
     }
 
     @Transactional
@@ -246,6 +252,7 @@ public class EntitlementService {
                         eventPublisher.publishUpdated(entity);
                     }
                 });
+        log.info("Feature enabled on entitlements: tenantId={} featureKey={}", tenantId, featureKey);
     }
 
     @Transactional
@@ -258,6 +265,7 @@ public class EntitlementService {
                         eventPublisher.publishUpdated(entity);
                     }
                 });
+        log.info("Feature disabled on entitlements: tenantId={} featureKey={}", tenantId, featureKey);
     }
 
     // =========================================================================

@@ -97,6 +97,7 @@ public class EnforcementService {
                                              CachedEntitlement entitlement,
                                              long startMs, boolean cacheHit) {
         long ms = System.currentTimeMillis() - startMs;
+        log.debug("ALLOWED tenantId={} featureKey={} latencyMs={} cacheHit={}", tenantId, request.featureKey(), ms, cacheHit);
         publisher.publishAllowed(tenantId, request.userId().toString(),
                 request.featureKey(), entitlement.licenseType(),
                 entitlement.entitlementId(), request.sessionId(), ms, cacheHit);
@@ -108,6 +109,7 @@ public class EnforcementService {
     private Mono<CheckAccessResponse> deny(String tenantId, CheckAccessRequest request,
                                             String reason, long startMs, boolean cacheHit) {
         long ms = System.currentTimeMillis() - startMs;
+        log.debug("DENIED tenantId={} featureKey={} reason={} latencyMs={}", tenantId, request.featureKey(), reason, ms);
         String licenseType = "UNKNOWN";
         publisher.publishDenied(tenantId, request.userId() != null ? request.userId().toString() : "unknown",
                 request.featureKey(), licenseType, reason, request.sessionId(), ms, cacheHit);

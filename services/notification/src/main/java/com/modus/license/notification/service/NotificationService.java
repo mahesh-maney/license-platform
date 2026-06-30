@@ -104,6 +104,7 @@ public class NotificationService {
             }
             status = "SENT";
             sentAt = Instant.now();
+            log.info("Notification dispatched: tenantId={} type={} channel={}", tenantId, notificationType, channel);
         } catch (Exception e) {
             log.error("Notification dispatch failed for tenant={} type={} channel={}: {}",
                     tenantId, notificationType, channel, e.getMessage());

@@ -4,6 +4,8 @@ import com.modus.license.core.context.TenantContextHolder;
 import com.modus.license.usage.api.dto.RecordUsageRequest;
 import com.modus.license.usage.api.dto.UsageResponse;
 import com.modus.license.usage.domain.event.UsageEventPublisher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -12,6 +14,8 @@ import java.util.UUID;
 
 @Service
 public class UsageMeteringService {
+
+    private static final Logger log = LoggerFactory.getLogger(UsageMeteringService.class);
 
     private final UsageEventPublisher publisher;
 
@@ -31,6 +35,8 @@ public class UsageMeteringService {
         String usageId  = UUID.randomUUID().toString();
         Instant now     = Instant.now();
 
+        log.debug("Recording usage: tenantId={} featureKey={} metricName={} quantity={} unit={}",
+                tenantId, request.featureKey(), request.metricName(), request.quantity(), request.unit());
         publisher.publishRecorded(
                 tenantId,
                 userId,

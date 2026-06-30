@@ -1,5 +1,7 @@
 package com.modus.license.session.service;
 
+import com.modus.license.audit.annotation.AuditAction;
+import com.modus.license.audit.annotation.Auditable;
 import com.modus.license.core.context.TenantContext;
 import com.modus.license.core.exception.ErrorCode;
 import com.modus.license.core.exception.ModusException;
@@ -37,6 +39,8 @@ public class SessionService {
     }
 
     /** Start a new session for the authenticated user. */
+    @Auditable(action = AuditAction.CREATE, resourceType = "SESSION",
+               resourceIdExpression = "#result.sessionId()")
     public Mono<SessionResponse> startSession(StartSessionRequest request, TenantContext ctx) {
         String tenantId = ctx.tenantId().value().toString();
 
@@ -66,7 +70,9 @@ public class SessionService {
                     return repository.save(record)
                             .flatMap(saved -> repository.incrementCount(tenantId).thenReturn(saved))
                             .doOnSuccess(eventPublisher::publishStarted)
-                            .map(this::toResponse);
+                            .map(this::toResponse)
+                            .doOnSuccess(r -> log.info("Started session: id={} tenantId={} userId={}",
+                                    r.sessionId(), tenantId, r.userId()));
                 });
     }
 
@@ -88,7 +94,8 @@ public class SessionService {
                     return repository.refresh(updated)
                             .doOnSuccess(eventPublisher::publishHeartbeat);
                 })
-                .map(this::toResponse);
+                .map(this::toResponse)
+                .doOnSuccess(r -> log.debug("Heartbeat for session: id={} tenantId={}", r.sessionId(), r.tenantId()));
     }
 
     /** End a session (user logout). */
@@ -97,7 +104,10 @@ public class SessionService {
         return requireSession(sessionId, tenantId)
                 .flatMap(session -> repository.delete(sessionId, tenantId)
                         .then(repository.decrementCount(tenantId))
-                        .doOnSuccess(v -> eventPublisher.publishEnded(session, "LOGOUT")))
+                        .doOnSuccess(v -> {
+                            log.info("Ended session: id={} tenantId={}", sessionId, tenantId);
+                            eventPublisher.publishEnded(session, "LOGOUT");
+                        }))
                 .then();
     }
 
@@ -107,7 +117,10 @@ public class SessionService {
         return requireSession(sessionId, tenantId)
                 .flatMap(session -> repository.delete(sessionId, tenantId)
                         .then(repository.decrementCount(tenantId))
-                        .doOnSuccess(v -> eventPublisher.publishKilled(session, "ADMIN_KILL")))
+                        .doOnSuccess(v -> {
+                            log.info("Killed session (admin): id={} tenantId={}", sessionId, tenantId);
+                            eventPublisher.publishKilled(session, "ADMIN_KILL");
+                        }))
                 .then();
     }
 

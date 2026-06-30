@@ -69,7 +69,10 @@ public class NamedLicenseService {
         license.setEntitlementId(request.entitlementId());
         license.setTotalSeats(request.totalSeats());
 
-        return mapper.toResponse(licenseRepository.save(license));
+        NamedLicenseEntity saved = licenseRepository.save(license);
+        log.info("Created license pool: id={} tenantId={} entitlementId={} seats={}",
+                saved.getId(), tenantId, request.entitlementId(), request.totalSeats());
+        return mapper.toResponse(saved);
     }
 
     @Transactional(readOnly = true)
@@ -111,6 +114,7 @@ public class NamedLicenseService {
         license.setUsedSeats(license.getUsedSeats() + 1);
         licenseRepository.save(license);
 
+        log.info("Assigned seat: licenseId={} userId={} tenantId={}", licenseId, request.userId(), tenantId);
         eventPublisher.publishAssigned(license, request.userId());
         return mapper.toAssignmentResponse(assignment);
     }
@@ -132,6 +136,7 @@ public class NamedLicenseService {
         license.setUsedSeats(license.getUsedSeats() - 1);
         licenseRepository.save(license);
 
+        log.info("Revoked seat: licenseId={} userId={} tenantId={}", licenseId, userId, tenantId);
         eventPublisher.publishRevoked(license, userId);
     }
 
@@ -161,6 +166,7 @@ public class NamedLicenseService {
         assignmentRepository.save(toAssignment);
 
         // usedSeats unchanged — one out, one in
+        log.info("Transferred seat: licenseId={} from={} to={} tenantId={}", licenseId, request.fromUserId(), request.toUserId(), tenantId);
         eventPublisher.publishTransferred(license, request.fromUserId(), request.toUserId());
         return mapper.toAssignmentResponse(toAssignment);
     }
