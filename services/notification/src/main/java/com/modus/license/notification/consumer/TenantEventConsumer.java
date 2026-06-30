@@ -79,16 +79,26 @@ public class TenantEventConsumer {
                 notificationService.notifyEmail(tenantId, "TRIAL_STARTED",
                         "Your Modus trial has started",
                         "Welcome to Modus! Your trial is active and expires on " + trialEnd + ".");
+                log.info("Sent TRIAL_STARTED notification: tenantId={} trialEndsAt={}", tenantId, trialEnd);
             }
-            case EventTypes.Tenant.TRIAL_EXPIRED -> notificationService.notifyEmail(tenantId, "TRIAL_EXPIRED",
-                    "Your Modus trial has expired",
-                    "Your Modus trial has expired. Please upgrade your plan to continue using the platform.");
-            case EventTypes.Tenant.SUSPENDED -> notificationService.notifyEmail(tenantId, "TENANT_SUSPENDED",
-                    "Your Modus account has been suspended",
-                    "Your Modus account has been suspended. Please contact support for assistance.");
-            case EventTypes.Tenant.ACTIVATED -> notificationService.notifyEmail(tenantId, "TENANT_ACTIVATED",
-                    "Your Modus account is now active",
-                    "Welcome to Modus! Your account has been activated.");
+            case EventTypes.Tenant.TRIAL_EXPIRED -> {
+                notificationService.notifyEmail(tenantId, "TRIAL_EXPIRED",
+                        "Your Modus trial has expired",
+                        "Your Modus trial has expired. Please upgrade your plan to continue using the platform.");
+                log.info("Sent TRIAL_EXPIRED notification: tenantId={}", tenantId);
+            }
+            case EventTypes.Tenant.SUSPENDED -> {
+                notificationService.notifyEmail(tenantId, "TENANT_SUSPENDED",
+                        "Your Modus account has been suspended",
+                        "Your Modus account has been suspended. Please contact support for assistance.");
+                log.info("Sent TENANT_SUSPENDED notification: tenantId={}", tenantId);
+            }
+            case EventTypes.Tenant.ACTIVATED -> {
+                notificationService.notifyEmail(tenantId, "TENANT_ACTIVATED",
+                        "Your Modus account is now active",
+                        "Welcome to Modus! Your account has been activated.");
+                log.info("Sent TENANT_ACTIVATED notification: tenantId={}", tenantId);
+            }
             default -> log.debug("No notification for TenantEvent type={}", type);
         }
     }

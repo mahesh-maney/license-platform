@@ -67,10 +67,13 @@ public class EntitlementEventConsumer {
                 UUID.fromString(event.getEntitlementId()),
                 event.getSeatLimit()
         );
+        log.info("Created named-license pool for entitlement: entitlementId={} tenantId={} seatLimit={}",
+                event.getEntitlementId(), event.getTenantId(), event.getSeatLimit());
     }
 
     private void handleUpdated(EntitlementEvent event) {
         if (event.getSeatLimit() == null) {
+            log.debug("ENTITLEMENT_UPDATED has no seatLimit change, skipping: entitlementId={}", event.getEntitlementId());
             return; // no seat-limit change in this update
         }
         namedLicenseService.processEntitlementSeatLimitChanged(
@@ -78,5 +81,7 @@ public class EntitlementEventConsumer {
                 UUID.fromString(event.getEntitlementId()),
                 event.getSeatLimit()
         );
+        log.info("Updated seat limit for named-license pool: entitlementId={} tenantId={} newSeatLimit={}",
+                event.getEntitlementId(), event.getTenantId(), event.getSeatLimit());
     }
 }

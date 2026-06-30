@@ -73,7 +73,8 @@ public class EntitlementEventConsumer {
 
         cacheService.put(cached)
                 .subscribe(
-                        unused -> {},
+                        unused -> log.info("Cached entitlement: tenantId={} entitlementId={} status={} features={}",
+                                event.getTenantId(), event.getEntitlementId(), event.getStatus(), featureKeys.size()),
                         err -> log.error("Failed to cache entitlement for tenant={}: {}",
                                 event.getTenantId(), err.getMessage())
                 );
@@ -99,7 +100,8 @@ public class EntitlementEventConsumer {
                 .switchIfEmpty(Mono.defer(() -> cacheService.evict(event.getTenantId()).thenReturn(true)))
                 .then()
                 .subscribe(
-                        unused -> {},
+                        unused -> log.info("Updated/evicted entitlement cache: tenantId={} entitlementId={} newStatus={}",
+                                event.getTenantId(), event.getEntitlementId(), event.getStatus()),
                         err -> log.error("Failed to update/evict entitlement cache for tenant={}: {}",
                                 event.getTenantId(), err.getMessage())
                 );

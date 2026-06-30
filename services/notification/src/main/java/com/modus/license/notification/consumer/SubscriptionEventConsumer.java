@@ -35,9 +35,11 @@ public class SubscriptionEventConsumer {
             containerFactory = "kafkaListenerContainerFactory"
     )
     public void onSubscriptionEvent(SubscriptionEvent event) {
+        String eventType = event.getMetadata().getEventType();
+        log.debug("Received subscription event: type={} subscriptionId={} tenantId={}",
+                eventType, event.getSubscriptionId(), event.getTenantId());
         try {
             UUID tenantId = UUID.fromString(event.getTenantId());
-            String eventType = event.getMetadata().getEventType();
             route(tenantId, eventType, event);
         } catch (Exception e) {
             log.error("Failed to process SubscriptionEvent type={} tenantId={}: {}",
@@ -48,43 +50,57 @@ public class SubscriptionEventConsumer {
 
     private void route(UUID tenantId, String eventType, SubscriptionEvent event) {
         switch (eventType) {
-            case EventTypes.Subscription.ACTIVATED -> notificationService.notifyEmail(
-                    tenantId, "SUBSCRIPTION_ACTIVATED",
-                    "Your Modus subscription is now active",
-                    buildBody("Your subscription is active.", event));
-
-            case EventTypes.Subscription.RENEWED -> notificationService.notifyEmail(
-                    tenantId, "SUBSCRIPTION_RENEWED",
-                    "Your Modus subscription has been renewed",
-                    buildBody("Your subscription has been renewed.", event));
-
-            case EventTypes.Subscription.UPGRADED -> notificationService.notifyEmail(
-                    tenantId, "SUBSCRIPTION_UPGRADED",
-                    "Your Modus subscription has been upgraded",
-                    buildBody("Your subscription has been upgraded to " + event.getPlanTier() + ".", event));
-
-            case EventTypes.Subscription.DOWNGRADED -> notificationService.notifyEmail(
-                    tenantId, "SUBSCRIPTION_DOWNGRADED",
-                    "Your Modus subscription has been downgraded",
-                    buildBody("Your subscription has been downgraded to " + event.getPlanTier() + ".", event));
-
-            case EventTypes.Subscription.CANCELLED -> notificationService.notifyEmail(
-                    tenantId, "SUBSCRIPTION_CANCELLED",
-                    "Your Modus subscription has been cancelled",
-                    buildBody("Your subscription has been cancelled. Reason: "
-                            + (event.getCancellationReason() != null ? event.getCancellationReason() : "N/A")
-                            + ".", event));
-
-            case EventTypes.Subscription.EXPIRED -> notificationService.notifyEmail(
-                    tenantId, "SUBSCRIPTION_EXPIRED",
-                    "Your Modus subscription has expired",
-                    buildBody("Your subscription has expired. Please renew to continue.", event));
-
-            case EventTypes.Subscription.SUSPENDED -> notificationService.notifyEmail(
-                    tenantId, "SUBSCRIPTION_SUSPENDED",
-                    "Your Modus subscription has been suspended",
-                    buildBody("Your subscription has been suspended. Please contact support.", event));
-
+            case EventTypes.Subscription.ACTIVATED -> {
+                notificationService.notifyEmail(tenantId, "SUBSCRIPTION_ACTIVATED",
+                        "Your Modus subscription is now active",
+                        buildBody("Your subscription is active.", event));
+                log.info("Sent SUBSCRIPTION_ACTIVATED notification: tenantId={} subscriptionId={}",
+                        tenantId, event.getSubscriptionId());
+            }
+            case EventTypes.Subscription.RENEWED -> {
+                notificationService.notifyEmail(tenantId, "SUBSCRIPTION_RENEWED",
+                        "Your Modus subscription has been renewed",
+                        buildBody("Your subscription has been renewed.", event));
+                log.info("Sent SUBSCRIPTION_RENEWED notification: tenantId={} subscriptionId={}",
+                        tenantId, event.getSubscriptionId());
+            }
+            case EventTypes.Subscription.UPGRADED -> {
+                notificationService.notifyEmail(tenantId, "SUBSCRIPTION_UPGRADED",
+                        "Your Modus subscription has been upgraded",
+                        buildBody("Your subscription has been upgraded to " + event.getPlanTier() + ".", event));
+                log.info("Sent SUBSCRIPTION_UPGRADED notification: tenantId={} subscriptionId={} newPlanTier={}",
+                        tenantId, event.getSubscriptionId(), event.getPlanTier());
+            }
+            case EventTypes.Subscription.DOWNGRADED -> {
+                notificationService.notifyEmail(tenantId, "SUBSCRIPTION_DOWNGRADED",
+                        "Your Modus subscription has been downgraded",
+                        buildBody("Your subscription has been downgraded to " + event.getPlanTier() + ".", event));
+                log.info("Sent SUBSCRIPTION_DOWNGRADED notification: tenantId={} subscriptionId={} newPlanTier={}",
+                        tenantId, event.getSubscriptionId(), event.getPlanTier());
+            }
+            case EventTypes.Subscription.CANCELLED -> {
+                notificationService.notifyEmail(tenantId, "SUBSCRIPTION_CANCELLED",
+                        "Your Modus subscription has been cancelled",
+                        buildBody("Your subscription has been cancelled. Reason: "
+                                + (event.getCancellationReason() != null ? event.getCancellationReason() : "N/A")
+                                + ".", event));
+                log.info("Sent SUBSCRIPTION_CANCELLED notification: tenantId={} subscriptionId={}",
+                        tenantId, event.getSubscriptionId());
+            }
+            case EventTypes.Subscription.EXPIRED -> {
+                notificationService.notifyEmail(tenantId, "SUBSCRIPTION_EXPIRED",
+                        "Your Modus subscription has expired",
+                        buildBody("Your subscription has expired. Please renew to continue.", event));
+                log.info("Sent SUBSCRIPTION_EXPIRED notification: tenantId={} subscriptionId={}",
+                        tenantId, event.getSubscriptionId());
+            }
+            case EventTypes.Subscription.SUSPENDED -> {
+                notificationService.notifyEmail(tenantId, "SUBSCRIPTION_SUSPENDED",
+                        "Your Modus subscription has been suspended",
+                        buildBody("Your subscription has been suspended. Please contact support.", event));
+                log.info("Sent SUBSCRIPTION_SUSPENDED notification: tenantId={} subscriptionId={}",
+                        tenantId, event.getSubscriptionId());
+            }
             default -> log.debug("No notification configured for SubscriptionEvent type={}", eventType);
         }
     }

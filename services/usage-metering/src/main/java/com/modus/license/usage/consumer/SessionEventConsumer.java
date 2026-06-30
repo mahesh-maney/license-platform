@@ -66,10 +66,13 @@ public class SessionEventConsumer {
                 1.0,
                 UNIT_SESSIONS
         );
+        log.debug("Recorded session start usage: tenantId={} sessionId={} userId={}",
+                event.getTenantId(), event.getSessionId(), event.getUserId());
     }
 
     private void recordSessionEnd(SessionEvent event) {
         if (event.getEndedAt() == null) {
+            log.debug("Session end event has no endedAt, skipping duration recording: sessionId={}", event.getSessionId());
             return;
         }
         long durationSeconds = Duration.between(
@@ -84,5 +87,7 @@ public class SessionEventConsumer {
                 durationSeconds,
                 UNIT_SECONDS
         );
+        log.debug("Recorded session end usage: tenantId={} sessionId={} durationSeconds={}",
+                event.getTenantId(), event.getSessionId(), durationSeconds);
     }
 }

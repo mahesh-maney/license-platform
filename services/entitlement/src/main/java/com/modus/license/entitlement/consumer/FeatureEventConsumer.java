@@ -42,11 +42,15 @@ public class FeatureEventConsumer {
         log.debug("Received feature event: type={} tenantId={} featureKey={}", eventType, tenantId, featureKey);
 
         switch (eventType) {
-            case EventTypes.Feature.ENABLED, EventTypes.Feature.BETA_GRANTED ->
-                    entitlementService.processFeatureEnabled(tenantId, featureKey);
+            case EventTypes.Feature.ENABLED, EventTypes.Feature.BETA_GRANTED -> {
+                entitlementService.processFeatureEnabled(tenantId, featureKey);
+                log.info("Added featureKey to entitlements: tenantId={} featureKey={}", tenantId, featureKey);
+            }
             case EventTypes.Feature.DISABLED, EventTypes.Feature.BETA_REVOKED,
-                 EventTypes.Feature.DEPRECATED ->
-                    entitlementService.processFeatureDisabled(tenantId, featureKey);
+                 EventTypes.Feature.DEPRECATED -> {
+                entitlementService.processFeatureDisabled(tenantId, featureKey);
+                log.info("Removed featureKey from entitlements: tenantId={} featureKey={}", tenantId, featureKey);
+            }
             default -> log.debug("Ignoring feature event type: {}", eventType);
         }
     }

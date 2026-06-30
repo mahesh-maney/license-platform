@@ -33,8 +33,14 @@ public class TenantEventConsumer {
         log.debug("Received tenant event: type={} tenantId={}", eventType, tenantId);
 
         switch (eventType) {
-            case EventTypes.Tenant.SUSPENDED -> entitlementService.processTenantSuspended(tenantId);
-            case EventTypes.Tenant.ACTIVATED -> entitlementService.processTenantActivated(tenantId);
+            case EventTypes.Tenant.SUSPENDED -> {
+                entitlementService.processTenantSuspended(tenantId);
+                log.info("Suspended all entitlements for tenant: tenantId={}", tenantId);
+            }
+            case EventTypes.Tenant.ACTIVATED -> {
+                entitlementService.processTenantActivated(tenantId);
+                log.info("Reactivated all entitlements for tenant: tenantId={}", tenantId);
+            }
             default -> log.debug("Ignoring tenant event type: {}", eventType);
         }
     }

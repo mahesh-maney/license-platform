@@ -50,6 +50,8 @@ public class EnforcementEventConsumer {
                     1.0,
                     UNIT_CALLS
             );
+            log.debug("Recorded API call usage: tenantId={} featureKey={} userId={}",
+                    decision.getTenantId(), decision.getFeatureKey(), decision.getUserId());
         } catch (Exception e) {
             log.error("Failed to record usage for enforcement decision: tenantId={} featureKey={} error={}",
                     decision.getTenantId(), decision.getFeatureKey(), e.getMessage());
