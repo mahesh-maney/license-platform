@@ -6,6 +6,7 @@ import com.modus.license.session.config.SessionProperties;
 import com.modus.license.session.domain.model.SessionRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
@@ -36,7 +37,7 @@ public class SessionRepository {
     private final ObjectMapper objectMapper;
     private final Duration ttl;
 
-    public SessionRepository(ReactiveRedisTemplate<String, String> redis,
+    public SessionRepository(@Qualifier("reactiveStringRedisTemplate") ReactiveRedisTemplate<String, String> redis,
                               ObjectMapper sessionObjectMapper,
                               SessionProperties props) {
         this.redis        = redis;

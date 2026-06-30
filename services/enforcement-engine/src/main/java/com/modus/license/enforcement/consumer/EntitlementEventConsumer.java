@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
+import reactor.core.publisher.Mono;
+
 import java.time.Instant;
 import java.util.List;
 
@@ -79,7 +81,11 @@ public class EntitlementEventConsumer {
 
     private void evictOrUpdateStatus(EntitlementEvent event) {
         // Update the cached status so enforcement can immediately deny access
-        // without waiting for TTL expiry
+        // without waiting for TTL expiry.
+        // thenReturn(true) on each Mono<Void> branch prevents switchIfEmpty from
+        // triggering after put() completes (Mono<Void> emits no value, which would
+        // otherwise be treated as "empty" by switchIfEmpty).
+        // Mono.defer() ensures evict() is only called when switchIfEmpty actually fires.
         cacheService.get(event.getTenantId())
                 .flatMap(existing -> {
                     CachedEntitlement updated = new CachedEntitlement(
@@ -88,9 +94,10 @@ public class EntitlementEventConsumer {
                             existing.seatLimit(), existing.featureKeys(),
                             existing.planTier(), existing.effectiveAt()
                     );
-                    return cacheService.put(updated);
+                    return cacheService.put(updated).thenReturn(true);
                 })
-                .switchIfEmpty(cacheService.evict(event.getTenantId()))
+                .switchIfEmpty(Mono.defer(() -> cacheService.evict(event.getTenantId()).thenReturn(true)))
+                .then()
                 .subscribe(
                         unused -> {},
                         err -> log.error("Failed to update/evict entitlement cache for tenant={}: {}",

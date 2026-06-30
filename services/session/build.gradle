@@ -24,6 +24,7 @@ dependencies {
 
     testImplementation project(':platform:platform-test')
     testImplementation libs.spring.security.test
+    testRuntimeOnly libs.jakarta.servlet.api
     testImplementation libs.testcontainers.redis
     testImplementation libs.testcontainers.kafka
     testImplementation libs.reactor.test

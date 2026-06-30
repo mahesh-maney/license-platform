@@ -65,7 +65,7 @@ grpc:
     session-service:
       address:   static://${GRPC_SESSION_HOST:localhost}:${GRPC_SESSION_PORT:9097}
       deadline:  ${GRPC_SESSION_DEADLINE_MS:50}
-      negotiation-type: ${GRPC_TLS_ENABLED:false == 'true' ? 'TLS' : 'PLAINTEXT'}
+      negotiation-type: ${GRPC_NEGOTIATION_TYPE:PLAINTEXT}
 
 enforcement:
   cache-warm-on-startup:    ${ENFORCEMENT_CACHE_WARM_ON_STARTUP:true}

@@ -7,6 +7,7 @@ import com.modus.license.tenant.domain.entity.TenantEntity;
 import com.modus.license.tenant.domain.event.TenantEventPublisher;
 import com.modus.license.tenant.domain.repository.TenantRepository;
 import com.modus.license.test.containers.PostgresTestContainer;
+import com.modus.license.test.context.TenantContextTestHelper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,7 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -66,23 +68,28 @@ class TenantIntegrationTest {
     @Autowired ObjectMapper    objectMapper;
     @Autowired TenantRepository tenantRepository;
 
+    static final String TENANT_ID =
+            TenantContextTestHelper.DEFAULT_TENANT_ID.value().toString();
+    static final String USER_ID =
+            TenantContextTestHelper.DEFAULT_USER_ID.value().toString();
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    /**
-     * POST processor that injects a mock JWT with ROLE_PLATFORM_ADMIN authority.
-     *
-     * The SecurityConfig sets JwtGrantedAuthoritiesConverter.setAuthorityPrefix(""),
-     * so @PreAuthorize("hasAnyRole('PLATFORM_ADMIN')") requires the authority to be
-     * stored as "ROLE_PLATFORM_ADMIN". We inject that directly via mockJwt().
-     */
     private static org.springframework.test.web.servlet.request.RequestPostProcessor platformAdmin() {
-        return jwt().authorities(new SimpleGrantedAuthority("ROLE_PLATFORM_ADMIN"));
+        return jwt()
+                .authorities(new SimpleGrantedAuthority("ROLE_PLATFORM_ADMIN"))
+                .jwt(j -> j.subject(USER_ID)
+                           .claim("tenant_id", TENANT_ID)
+                           .claim("roles", List.of("PLATFORM_ADMIN")));
     }
 
     private static org.springframework.test.web.servlet.request.RequestPostProcessor tenantAdmin() {
-        return jwt().authorities(
-                new SimpleGrantedAuthority("ROLE_PLATFORM_ADMIN"),
-                new SimpleGrantedAuthority("ROLE_TENANT_ADMIN"));
+        return jwt()
+                .authorities(new SimpleGrantedAuthority("ROLE_PLATFORM_ADMIN"),
+                             new SimpleGrantedAuthority("ROLE_TENANT_ADMIN"))
+                .jwt(j -> j.subject(USER_ID)
+                           .claim("tenant_id", TENANT_ID)
+                           .claim("roles", List.of("PLATFORM_ADMIN", "TENANT_ADMIN")));
     }
 
     private String body(String slug) throws Exception {

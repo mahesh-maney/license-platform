@@ -23,8 +23,8 @@ public interface UsageMetricRepository extends JpaRepository<UsageMetricEntity, 
             WHERE m.tenantId = :tenantId
               AND (:featureKey IS NULL OR m.featureKey = :featureKey)
               AND (:metricName IS NULL OR m.metricName = :metricName)
-              AND (:from      IS NULL OR m.windowStart >= :from)
-              AND (:to        IS NULL OR m.windowEnd   <= :to)
+              AND (cast(:from as java.time.Instant) IS NULL OR m.windowStart >= :from)
+              AND (cast(:to   as java.time.Instant) IS NULL OR m.windowEnd   <= :to)
             ORDER BY m.windowStart DESC
             """)
     Page<UsageMetricEntity> search(
