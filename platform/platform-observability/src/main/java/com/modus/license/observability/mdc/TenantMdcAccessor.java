@@ -38,8 +38,18 @@ public class TenantMdcAccessor implements ThreadLocalAccessor<TenantContext> {
     }
 
     @Override
-    public void restore() {
+    public void setValue() {
         MDC.remove(MdcKeys.TENANT_ID);
         MDC.remove(MdcKeys.USER_ID);
+    }
+
+    @Override
+    public void reset() {
+        setValue();
+    }
+
+    @Override
+    public void restore() {
+        setValue();
     }
 }

@@ -39,6 +39,7 @@ spring-boot-cache               = { module = "org.springframework.boot:spring-bo
 spring-boot-mail                = { module = "org.springframework.boot:spring-boot-starter-mail" }
 spring-boot-test                = { module = "org.springframework.boot:spring-boot-starter-test" }
 spring-security-test            = { module = "org.springframework.security:spring-security-test" }
+jakarta-servlet-api             = { module = "jakarta.servlet:jakarta.servlet-api" }
 spring-boot-data-redis          = { module = "org.springframework.boot:spring-boot-starter-data-redis-reactive" }
 
 # Spring Cloud

@@ -21,6 +21,10 @@ dependencies {
     implementation libs.springdoc.webflux
 
     testImplementation project(':platform:platform-test')
+    testImplementation libs.spring.security.test
+    // platform-observability auto-config imports MdcEnrichmentFilter (servlet) at the class level;
+    // the jakarta.servlet.Filter class must be present for Spring to load the auto-config in WebFlux tests.
+    testRuntimeOnly libs.jakarta.servlet.api
 }
 
 jib {

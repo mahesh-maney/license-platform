@@ -1,4 +1,7 @@
 spring:
+  config:
+    import: ""
+
   # Disable Redis auto-configuration — no Redis available in tests
   autoconfigure:
     exclude:
@@ -18,3 +21,7 @@ spring:
       default-filters: []
       # No routes needed for unit/integration tests of filters and controllers
       routes: []
+
+management:
+  tracing:
+    enabled: false

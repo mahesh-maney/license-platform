@@ -38,6 +38,10 @@ public class TenantContextWebFilter implements WebFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+        // Use thenReturn(true) so flatMap emits a value in both the success and error paths.
+        // Without it, Mono<Void> (from setComplete or chain.filter) completes without emitting
+        // an element, which incorrectly triggers switchIfEmpty and invokes chain.filter a second
+        // time after the 401 response is already committed.
         return ReactiveSecurityContextHolder.getContext()
                 .map(SecurityContext::getAuthentication)
                 .filter(auth -> auth instanceof JwtAuthenticationToken)
@@ -46,12 +50,14 @@ public class TenantContextWebFilter implements WebFilter, Ordered {
                     try {
                         TenantContext ctx = extractor.extract(jwtAuth.getToken());
                         return chain.filter(exchange)
-                                .contextWrite(Context.of(TenantContext.REACTOR_CONTEXT_KEY, ctx));
+                                .contextWrite(Context.of(TenantContext.REACTOR_CONTEXT_KEY, ctx))
+                                .thenReturn(true);
                     } catch (TenantContextException e) {
                         exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-                        return exchange.getResponse().setComplete();
+                        return exchange.getResponse().setComplete().thenReturn(true);
                     }
                 })
-                .switchIfEmpty(chain.filter(exchange));
+                .switchIfEmpty(chain.filter(exchange).thenReturn(true))
+                .then();
     }
 }
