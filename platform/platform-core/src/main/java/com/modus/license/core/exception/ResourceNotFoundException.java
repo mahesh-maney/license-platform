@@ -20,6 +20,11 @@ public class ResourceNotFoundException extends ModusException {
                 "User not found: " + userId);
     }
 
+    public static ResourceNotFoundException subscription(String subscriptionId) {
+        return new ResourceNotFoundException(ErrorCode.SUBSCRIPTION_NOT_FOUND,
+                "Subscription not found: " + subscriptionId);
+    }
+
     public static ResourceNotFoundException plan(String planId) {
         return new ResourceNotFoundException(ErrorCode.PLAN_NOT_FOUND,
                 "Plan not found: " + planId);

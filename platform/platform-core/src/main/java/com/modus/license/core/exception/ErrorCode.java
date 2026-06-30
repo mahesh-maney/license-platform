@@ -13,6 +13,10 @@ public enum ErrorCode {
     USER_NOT_FOUND          (404, "User not found"),
     USER_ALREADY_EXISTS     (409, "User already exists"),
 
+    // --- Subscription ---
+    SUBSCRIPTION_NOT_FOUND  (404, "Subscription not found"),
+    SUBSCRIPTION_CONFLICT   (409, "Subscription conflict"),
+
     // --- Plan ---
     PLAN_NOT_FOUND          (404, "Subscription plan not found"),
     PLAN_ALREADY_EXISTS     (409, "Subscription plan already exists"),
