@@ -23,6 +23,7 @@ dependencies {
     implementation libs.lombok
 
     testImplementation project(':platform:platform-test')
+    testImplementation libs.spring.security.test
     testImplementation libs.testcontainers.redis
     testImplementation libs.testcontainers.kafka
     testImplementation libs.reactor.test

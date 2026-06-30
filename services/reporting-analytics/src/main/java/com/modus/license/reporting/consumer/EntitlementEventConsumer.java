@@ -68,8 +68,8 @@ public class EntitlementEventConsumer {
         }
     }
 
-    private String serializeFeatureKeys(List<CharSequence> featureKeys) {
+    private String serializeFeatureKeys(List<String> featureKeys) {
         if (featureKeys == null || featureKeys.isEmpty()) return "";
-        return String.join(",", featureKeys.stream().map(CharSequence::toString).toList());
+        return String.join(",", featureKeys);
     }
 }
