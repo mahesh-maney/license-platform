@@ -37,10 +37,12 @@ class FeatureEventConsumerTest {
 
     private FeatureEvent event(String eventType, String tenantId) {
         Instant now = Instant.now();
+        // EventMetadata.tenantId is non-nullable; use "GLOBAL" sentinel for global (null-tenant) events
+        String metaTenantId = tenantId != null ? tenantId : "GLOBAL";
         EventMetadata metadata = EventMetadata.newBuilder()
                 .setEventId(UUID.randomUUID().toString())
                 .setEventType(eventType)
-                .setTenantId(tenantId)
+                .setTenantId(metaTenantId)
                 .setActorId(null)
                 .setTimestamp(now)
                 .setCorrelationId(null)

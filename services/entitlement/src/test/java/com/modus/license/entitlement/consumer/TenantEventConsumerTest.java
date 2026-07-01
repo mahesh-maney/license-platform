@@ -47,10 +47,15 @@ class TenantEventConsumerTest {
         return TenantEvent.newBuilder()
                 .setMetadata(metadata)
                 .setTenantId(TENANT_ID.toString())
+                .setSlug("acme-corp")
                 .setName("Acme Corp")
-                .setContactEmail("admin@acme.com")
+                .setAdminEmail("admin@acme.com")
                 .setStatus("ACTIVE")
+                .setPlanTier(null)
+                .setRegion(null)
                 .setPreviousStatus(null)
+                .setTrialEndsAt(null)
+                .setEffectiveAt(now)
                 .build();
     }
 
